@@ -1,6 +1,7 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-import itertools
+import numpy as np
+import matplotlib.pyplot as plt
 import time
 
 class Analyzer:
@@ -55,6 +56,18 @@ class Analyzer:
             self.hit_100 = 280 - (16*self.overall_diff)*2/3
             self.hit_300 = 160 - (12-self.overall_diff)*2/3
 
+        ####################################################
+        # plotting members
+        self.fig, self.ax = plt.subplots()
+        self.p1, = self.ax.plot(self.current_frame.x, 'b.')
+        self.p_hitcircle = plt.Circle((0, 0), self.circle_radius, color = 'k')
+        # plotting init
+        plt.ion()
+        self.ax.set_xlim([0,512])
+        self.ax.set_ylim([0,384])
+        self.ax.add_artist(self.p_hitcircle)
+        ####################################################
+
     def next_frame(self):
         self.prev_frame = self.current_frame
         self.current_frame = next(self.frames_iterator)
@@ -62,15 +75,11 @@ class Analyzer:
     def next_hitobject(self):
         self.prev_hitobject = self.current_hitobject
         self.current_hitobject = next(self.hitobjects_iterator)
-           # print("300:{} 100:{} 50:{} Miss:{} | 300:{} 100:{} 50:{} Miss:{}".format(self.count300,self.count100,self.count50,self.countmiss,self.play_parser.count300,self.play_parser.count100,self.play_parser.count50,self.play_parser.count_miss))
-
     
     def check_if_hit(self, frame, hitobject):
         diff = pow(frame.x-hitobject.x,2)+pow(frame.y-(384-hitobject.y),2)
-        if pow(diff,0.5)<self.circle_radius:
-            return True
-        else:
-            return False
+        return (pow(diff,0.5)<self.circle_radius)
+
     def get_ms_delay(self,frame,hitobject):
         diff = hitobject.time-frame.time
         print(diff)
@@ -88,51 +97,29 @@ class Analyzer:
             #hit 300
             self.count300+=1
     
+    def draw_plot(self):
+        self.p1.remove()
+        arrx = [self.prev_frame.x,self.current_frame.x]
+        arry = [self.prev_frame.y,self.current_frame.y]
+        self.p1, = self.ax.plot(arrx, arry, 'bo')
+        """if self.current_frame.k1_pressed:
+            self.p1, = self.ax.plot(arrx, arry, 'bo')
+        else:
+            self.p1, = self.ax.plot(arrx, arry, 'ro')
+        """
+        self.p_hitcircle.center = self.current_hitobject.x, 384-self.current_hitobject.y
+        if self.check_if_hit(self.current_frame,self.current_hitobject):
+            self.p_hitcircle.set_color('g')
+        else:
+            self.p_hitcircle.set_color('b')
+        plt.show()
+        plt.pause(0.0001) #Note this correction
+
     def analyze_for_relax(self):
-        import numpy as np
-        import matplotlib.pyplot as plt
-        plt.ion() ## Note this correction
-        fig, ax = plt.subplots()
-        ax.set_xlim([0,512])
-        ax.set_ylim([0,384])
-        i=0
-        x=[0,0,0,0,0]
-        y=[0,0,0,0,0]
+        ## Note this correction
         f = open("out.txt", "w")
-        p1, = ax.plot(self.current_frame.x, 'b.')
-        p2, = ax.plot(self.current_frame.x, 'bo')
-        a_circle = plt.Circle((0, 0), self.circle_radius, color = 'k')
-        ax.add_artist(a_circle)
         while True:
-            ##############################
-            # plotting start
-            #
-            x.append(self.current_frame.x);
-            y.append(self.current_frame.y);
-            x = x[-2:]
-            y = y[-2:]
-            p1.remove()
-            p2.remove()
-            
-            p1, = ax.plot(x[0], y[0], 'b.')
-            if self.current_frame.k1_pressed:
-                p2, = ax.plot(x[1], y[1], 'bo')
-            else:
-                p2, = ax.plot(x[1], y[1], 'ro')
-            
-            a_circle.center = self.current_hitobject.x, 384-self.current_hitobject.y
-            if self.check_if_hit(self.current_frame,self.current_hitobject):
-                a_circle.set_color('g')
-            else:
-                a_circle.set_color('b')
-            i+=1;
-            plt.show()
-            plt.pause(0.1) #Note this correction
-            # plotting end
-            ############################
-
-
-
+            self.draw_plot()
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time),file= f)
             if self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
                 pass
