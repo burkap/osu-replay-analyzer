@@ -2,10 +2,7 @@ from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
 from utils.gui import GUI, Hitcircle, Cursor, Button
 import time
-
-
-def clamp(n, minn, maxn):
-    return max(min(maxn, n), minn)
+from utils.mathhelper import clamp
 
 
 class Analyzer:
