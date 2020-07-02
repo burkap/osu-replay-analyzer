@@ -16,14 +16,15 @@ class Analyzer:
         self.play_parser = ReplayParser(replay_file)
         self.beatmap_parser = Beatmap(beatmap_file)
 
-        self.current_frame = self.play_parser.frames[0]
-        self.prev_frame = self.play_parser.frames[0]
+        self.current_frame_index = 0
+        self.current_hitobject_index = 0
 
-        self.current_hitobject = self.beatmap_parser.hitobjects[0]
-        self.prev_hitobject = self.beatmap_parser.hitobjects[0]
+        self.current_frame = self.play_parser.frames[self.current_frame_index]
+        self.prev_frame = self.play_parser.frames[self.current_frame_index]
 
-        self.frames_iterator = iter(self.play_parser.frames)
-        self.hitobjects_iterator = iter(self.beatmap_parser.hitobjects)
+        self.current_hitobject = self.beatmap_parser.hitobjects[self.current_frame_index]
+        self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_frame_index]
+
         self.current_frame_hit = False
         self.count300 = 0
         self.count100 = 0
@@ -76,13 +77,19 @@ class Analyzer:
         self.ax.add_artist(self.p_hitcircle)
         ####################################################
 
+    def get_relative_frame(self, r_index: int):
+        # TODO: add boundary checks
+        return self.play_parser.frames[self.current_frame_index+r_index]
+
     def go_to_next_frame(self):
         self.prev_frame = self.current_frame
-        self.current_frame = next(self.frames_iterator)
+        self.current_frame_index += 1
+        self.current_frame = self.play_parser.frames[self.current_frame_index]
 
     def go_to_next_hitobject(self):
         self.prev_hitobject = self.current_hitobject
-        self.current_hitobject = next(self.hitobjects_iterator)
+        self.current_hitobject_index += 1
+        self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
 
     def check_if_hit(self, frame, hitobject):
         diff = pow(frame.x-hitobject.x, 2)+pow(frame.y-(384-hitobject.y), 2)
@@ -90,7 +97,7 @@ class Analyzer:
 
     def get_ms_delay(self, frame, hitobject):
         diff = hitobject.time-frame.time
-        #print(diff)
+        # print(diff)
         diff = abs(diff)
         if diff >= self.hit_50:
             # miss
