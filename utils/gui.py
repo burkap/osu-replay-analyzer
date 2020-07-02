@@ -157,7 +157,6 @@ class Slider(GUI):
         return (pow(diff, 0.5) < 7)
 
     def display(self):
-        print(self.value)
         circle_origin_x = self.x + int(self.width*(self.value/self.max_value))
         circle_origin_y = self.y + int(self.height/2)
 
