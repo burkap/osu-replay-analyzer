@@ -1,5 +1,6 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
+from utils.gui import GUI, Hitcircle, Cursor
 import time
 
 
@@ -36,6 +37,7 @@ class Analyzer:
         self.count50 = 0
         self.countmiss = 0
 
+        self.trail_length = 10
         self.running = True
         # set cs
         cs = self.beatmap_parser.difficulty["CircleSize"]
@@ -66,18 +68,15 @@ class Analyzer:
             self.hit_100 = self.hit_100 * 2/3
             self.hit_300 = self.hit_300 * 2/3
 
-        # 3
-        # Drawing members
-
-        self.d_frame_count = 10
-        ####################################################
-        # plotting members
-        self.frames_x = []
-        self.frames_y = []
-        ####################################################
-
     def switch_running(self):
         self.running = not self.running
+
+    def get_trailing_frames(self, n):
+        frames = []
+        for i in range(0, n):
+            f = self.get_relative_frame(-i)
+            frames.append((f.x, f.y))
+        return frames
 
     def get_relative_frame(self, r_index: int):
         # TODO: add boundary checks
@@ -129,9 +128,26 @@ class Analyzer:
             show_outside:   bool-- ...
 
         """
+        gui = GUI(512, 384)
+
+        hc = Hitcircle(0, 0, self.circle_radius)
+        cursor = Cursor((0, 0))
 
         f = open("out.txt", "w")
         while True:
+            hc.set_position(self.current_hitobject.x,
+                            384-self.current_hitobject.y)
+
+            if self.check_if_hit(self.current_frame, self.current_hitobject):
+                hc.set_color((0, 255, 0))
+            else:
+                hc.set_color((255,0,0))
+            cursor.set_cursor_position(self.current_frame.x,
+                                       self.current_frame.y)
+            cursor.set_trail_points(
+                self.get_trailing_frames(self.trail_length))
+            gui.draw()
+            time.sleep(0.01)
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
 
