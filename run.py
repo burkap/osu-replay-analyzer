@@ -8,4 +8,4 @@ replay_file = os.path.join(data_folder, "whitecat.osr")
 bmap_file = os.path.join(data_folder, "whitecat.osu")
 an = Analyzer(replay_file, bmap_file)
 
-an.analyze_for_relax(True, True)
+an.analyze_for_relax()
