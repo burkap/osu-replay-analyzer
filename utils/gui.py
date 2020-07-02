@@ -1,7 +1,7 @@
 import sys
 import pygame
 from pygame import gfxdraw
-from utils.mathhelper import clamp
+
 
 class GUI:
     def __init__(self, width, height):
@@ -14,27 +14,12 @@ class GUI:
 
         GUI.clock = pygame.time.Clock()
         GUI.hitcircles = []
-        GUI.elements = []
-        GUI.cursor = Cursor((0, 0))
-        GUI.is_holding_down = False
-        GUI.is_single_click = False
-
-    def mouse_events(self):
-        GUI.mouse = pygame.mouse.get_pos()
-        GUI.click = pygame.mouse.get_pressed()
-
-        if GUI.click[0] == 1:
-            if not GUI.is_holding_down:
-                GUI.is_single_click = True
-                GUI.is_holding_down = True
-            else:
-                GUI.is_single_click = False
-        else:
-            GUI.is_single_click = False
-            GUI.is_holding_down = False
+        GUI.buttons = []
+        GUI.cursor = Cursor((0, 0), [0, 0])
 
     def draw(self):
-        self.mouse_events()
+        GUI.mouse = pygame.mouse.get_pos()
+        GUI.click = pygame.mouse.get_pressed()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -44,7 +29,7 @@ class GUI:
         for i in GUI.hitcircles:
             i.display()
 
-        for i in GUI.elements:
+        for i in GUI.buttons:
             i.display()
         GUI.cursor.display()
 
@@ -56,7 +41,6 @@ class Hitcircle(GUI):
         self.x = int(x)
         self.y = int(y)
         self.radius = int(radius)
-        self.color = color
         GUI.hitcircles.append(self)
 
     def set_position(self, x, y):
@@ -108,8 +92,9 @@ class Button(GUI):
         self.on_click = on_click
 
         self.font = pygame.font.Font("freesansbold.ttf", 15)
+        self.is_holding_down = False
 
-        GUI.elements.append(self)
+        GUI.buttons.append(self)
 
     def set_text(self, text):
         self.text = text
@@ -118,8 +103,13 @@ class Button(GUI):
         if(self.x+self.width > GUI.mouse[0] > self.x and self.y+self.height > GUI.mouse[1] > self.y):
             pygame.draw.rect(GUI.screen, (220, 220, 220),
                              (self.x, self.y, self.width, self.height))
-            if GUI.is_single_click and self.on_click != None:
-                self.on_click()
+            if GUI.click[0] == 1:
+                if not self.is_holding_down:
+                    if self.on_click != None:
+                        self.on_click()
+                        self.is_holding_down = True
+            else:
+                self.is_holding_down = False
         else:
             pygame.draw.rect(GUI.screen, (255, 255, 255),
                              (self.x, self.y, self.width, self.height))
@@ -129,59 +119,3 @@ class Button(GUI):
         text_rect.center = ((self.x+(self.width/2)),
                             (self.y+(self.height/2)))
         GUI.screen.blit(text_surface, text_rect)
-
-
-class Slider(GUI):
-    def __init__(self, x, y, width, height, value, max_value):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.value = value
-        self.max_value = max_value
-
-        self.drag_origin_x = 0
-        self.drag_origin_y = 0
-
-        self.is_dragging = False
-        GUI.elements.append(self)
-
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
-
-    def check_mouse_on_ball(self, x, y):
-        diff = pow(x-GUI.mouse[0], 2)+pow(y-GUI.mouse[1], 2)
-        return (pow(diff, 0.5) < 7)
-
-    def display(self):
-        print(self.value)
-        circle_origin_x = self.x + int(self.width*(self.value/self.max_value))
-        circle_origin_y = self.y + int(self.height/2)
-
-        pygame.draw.rect(GUI.screen, (255, 255, 255),
-                         (self.x, self.y, self.width, self.height))
-
-        if self.check_mouse_on_ball(circle_origin_x, circle_origin_y):
-            if GUI.is_single_click:
-                self.is_dragging = True
-                self.drag_origin_x = GUI.mouse[0]
-                self.drag_origin_y = GUI.mouse[1]
-        if self.is_dragging and GUI.is_holding_down:
-            circle_origin_x = GUI.mouse[0]
-            circle_origin_x = clamp(circle_origin_x, self.x, self.x+self.width)
-            self.value = (circle_origin_x-self.x)*self.max_value/self.width
-        else:
-            self.is_dragging = False
-
-        gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, 7, (0, 255, 255))
-        gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                              circle_origin_y, 7, (0, 255, 255))
-        gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, 5, (0, 0, 0))
-        if self.is_dragging:
-            gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                                  circle_origin_y, 5, (0, 0, 0))
