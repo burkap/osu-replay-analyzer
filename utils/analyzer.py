@@ -1,6 +1,6 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider
 import time
 from utils.mathhelper import clamp
 
@@ -130,9 +130,11 @@ class Analyzer:
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
         button1 = Button(256-25, 300, 50, 20, "Pause", self.switch_running)
+        slider = Slider(22, 350, 470, 5, self.current_frame.time, self.play_parser.frames[self._frames_count-1].time)
         f = open("out.txt", "w")
         while True:
             button1.set_text("Pause" if self.running else "Play")
+            slider.set_value(self.current_frame.time)
             hc.set_position(self.current_hitobject.x,
                             384-self.current_hitobject.y)
 
