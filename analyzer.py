@@ -76,11 +76,11 @@ class Analyzer:
         self.ax.add_artist(self.p_hitcircle)
         ####################################################
 
-    def next_frame(self):
+    def go_to_next_frame(self):
         self.prev_frame = self.current_frame
         self.current_frame = next(self.frames_iterator)
 
-    def next_hitobject(self):
+    def go_to_next_hitobject(self):
         self.prev_hitobject = self.current_hitobject
         self.current_hitobject = next(self.hitobjects_iterator)
 
@@ -147,7 +147,7 @@ class Analyzer:
                     self.get_ms_delay(self.current_frame,
                                       self.current_hitobject)
             if self.current_frame.time < self.current_hitobject.time:
-                self.next_frame()
+                self.go_to_next_frame()
             else:
-                self.next_frame()
-                self.next_hitobject()
+                self.go_to_next_frame()
+                self.go_to_next_hitobject()
