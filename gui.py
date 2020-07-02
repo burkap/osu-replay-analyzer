@@ -1,5 +1,6 @@
 import sys
 import pygame
+from pygame import gfxdraw
 
 
 class GUI:
@@ -21,9 +22,10 @@ class GUI:
 
 
 class Hitcircle(GUI):
-    def __init__(self, x, y):
+    def __init__(self, x, y, radius=50):
         self.x = x
         self.y = y
+        self.radius = radius
         GUI.hitcircles.append(self)
 
     def set_position(self, x, y):
@@ -35,6 +37,9 @@ class Hitcircle(GUI):
         del self
 
     def display(self):
+        gfxdraw.aacircle(GUI.screen, self.x, self.y, self.radius, (255, 0, 0))
+        gfxdraw.filled_circle(GUI.screen, self.x, self.y,
+                              self.radius, (255, 0, 0))
         pygame.draw.circle(GUI.screen, (255, 0, 0),
                            (self.x, self.y), 50, 2)
 
