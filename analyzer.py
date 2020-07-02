@@ -76,11 +76,11 @@ class Analyzer:
         self.ax.add_artist(self.p_hitcircle)
         ####################################################
 
-    def go_to_next_frame(self):
+    def next_frame(self):
         self.prev_frame = self.current_frame
         self.current_frame = next(self.frames_iterator)
 
-    def go_to_next_hitobject(self):
+    def next_hitobject(self):
         self.prev_hitobject = self.current_hitobject
         self.current_hitobject = next(self.hitobjects_iterator)
 
