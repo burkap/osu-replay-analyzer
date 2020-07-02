@@ -1,6 +1,6 @@
 import os
 
-from analyzer import Analyzer
+from utils.analyzer import Analyzer
 
 cwd = os.getcwd()
 data_folder = os.path.join(cwd, "data")
