@@ -1,6 +1,6 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor
+from utils.gui import GUI, Hitcircle, Cursor, Button
 import time
 
 
@@ -132,16 +132,17 @@ class Analyzer:
 
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
-
+        button1 = Button(256-25, 300, 50, 20, "Pause", self.switch_running)
         f = open("out.txt", "w")
         while True:
+            button1.set_text("Pause" if self.running else "Play")
             hc.set_position(self.current_hitobject.x,
                             384-self.current_hitobject.y)
 
             if self.check_if_hit(self.current_frame, self.current_hitobject):
                 hc.set_color((0, 255, 0))
             else:
-                hc.set_color((255,0,0))
+                hc.set_color((255, 0, 0))
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
             cursor.set_trail_points(
