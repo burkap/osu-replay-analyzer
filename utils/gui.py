@@ -5,10 +5,13 @@ from utils.mathhelper import clamp
 
 
 class GUI:
-    def __init__(self, width, height):
+    def __init__(self, width, height, offset_x, offset_y):
         pygame.init()
-        self.size = self.width, self.height = width, height
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.size = self.width, self.height = width + 2 * offset_x, height + 2 * offset_y
         GUI.screen = pygame.display.set_mode(self.size)
+        GUI.play_area = pygame.Surface((width, height))
 
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
@@ -40,14 +43,18 @@ class GUI:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-        self.screen.fill((0, 0, 0))
+        self.screen.fill((20, 20, 20))
+        self.play_area.fill((0, 0, 0))
 
         for i in GUI.hitcircles:
             i.display()
 
+        GUI.cursor.display()
+
+        GUI.screen.blit(GUI.play_area, (self.offset_x, self.offset_y))
+
         for i in GUI.elements:
             i.display()
-        GUI.cursor.display()
 
         pygame.display.flip()
 
@@ -72,8 +79,13 @@ class Hitcircle(GUI):
         del self
 
     def display(self):
-        gfxdraw.aacircle(GUI.screen, self.x, self.y, self.radius, self.color)
-        gfxdraw.filled_circle(GUI.screen, self.x, self.y,
+        gfxdraw.aacircle(
+            GUI.play_area,
+            self.x,
+            self.y,
+            self.radius,
+            self.color)
+        gfxdraw.filled_circle(GUI.play_area, self.x, self.y,
                               self.radius, self.color)
 
 
@@ -92,10 +104,10 @@ class Cursor(GUI):
         self.trail_points = trail_points
 
     def display(self):
-        pygame.draw.circle(GUI.screen, (0, 255, 255),
+        pygame.draw.circle(GUI.play_area, (0, 255, 255),
                            (self.x, self.y), 5, 2)
         if len(self.trail_points) > 1:
-            pygame.draw.aalines(GUI.screen, (0, 0, 255),
+            pygame.draw.aalines(GUI.play_area, (0, 0, 255),
                                 False, self.trail_points)
 
 

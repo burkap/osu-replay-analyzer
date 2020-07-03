@@ -146,13 +146,13 @@ class Analyzer:
             show_outside:   bool-- ...
         """
         start_time = time.time()
-        gui = GUI(512, 384)
+        gui = GUI(512, 384, 130, 60)
 
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
         button_pause = Button(
-            256 - 25,
-            300,
+            10,
+            384+80-10,
             50,
             20,
             "Pause",
@@ -161,9 +161,9 @@ class Analyzer:
         button_dt = Button(0, 0, 30, 40, "DT", self.switch_speed_to_dt)
         button_nm = Button(0, 50, 30, 40, "NM", self.switch_speed_to_nm)
         button_ht = Button(0, 100, 30, 40, "HT", self.switch_speed_to_ht)
-        slider = Slider(22, 350, 470, 5, self.current_frame.time,
+        slider = Slider(80, 384+80, 512+150, 5, self.current_frame.time,
                         self.play_parser.frames[-1].time)
-        debuglog = DebugBox(380, 10, 120, 200)
+        debuglog = DebugBox(512+135, 10, 120, 200)
         f = open("out.txt", "w")
         while True:
             debuglog.clear()
@@ -197,7 +197,8 @@ class Analyzer:
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
             else:
-                slider.set_value(self.play_parser.frames[self.current_frame_index].time)
+                slider.set_value(
+                    self.play_parser.frames[self.current_frame_index].time)
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
             cursor.set_trail_points(
