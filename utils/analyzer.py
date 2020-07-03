@@ -35,6 +35,7 @@ class Analyzer:
         self.countmiss = 0
 
         self.trail_length = 10
+        self.anim_speed = 1
         self.running = True
         # set cs
         cs = self.beatmap_parser.difficulty["CircleSize"]
@@ -48,7 +49,7 @@ class Analyzer:
         # set od
         od = self.beatmap_parser.difficulty["OverallDifficulty"]
         if self.play_parser.mods & 2:  # easy
-            od = od/2
+            od = od / 2
         elif self.play_parser.mods & 16:  # hardrock
             od = min(od * 1.4, 10)
 
@@ -57,16 +58,25 @@ class Analyzer:
         self.hit_100 = 280 - (16 * od)
         self.hit_300 = 160 - (12 * od)
         if self.play_parser.mods & 256:  # halftime
-            self.hit_50 = self.hit_100 * 4/3
-            self.hit_100 = self.hit_100 * 4/3
-            self.hit_300 = self.hit_300 * 4/3
+            self.hit_50 = self.hit_100 * 4 / 3
+            self.hit_100 = self.hit_100 * 4 / 3
+            self.hit_300 = self.hit_300 * 4 / 3
         elif self.play_parser.mods & 64:  # doubletime
-            self.hit_50 = self.hit_100 * 2/3
-            self.hit_100 = self.hit_100 * 2/3
-            self.hit_300 = self.hit_300 * 2/3
+            self.hit_50 = self.hit_100 * 2 / 3
+            self.hit_100 = self.hit_100 * 2 / 3
+            self.hit_300 = self.hit_300 * 2 / 3
 
     def switch_running(self):
         self.running = not self.running
+
+    def switch_speed_to_dt(self):
+        self.anim_speed = 1.5
+
+    def switch_speed_to_ht(self):
+        self.anim_speed = 0.5
+
+    def switch_speed_to_nm(self):
+        self.anim_speed = 1
 
     def get_trailing_frames(self, n):
         frames = []
@@ -76,20 +86,20 @@ class Analyzer:
         return frames
 
     def get_relative_frame(self, r_index: int):
-        abs_frame_index = self.current_frame_index+r_index
-        abs_frame_index = clamp(abs_frame_index, 0, self._frames_count-1)
+        abs_frame_index = self.current_frame_index + r_index
+        abs_frame_index = clamp(abs_frame_index, 0, self._frames_count - 1)
         return self.play_parser.frames[abs_frame_index]
 
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
-            self.current_frame_index-1, 0, self._frames_count-1)
-        self.prev_frame = self.play_parser.frames[self.current_frame_index-1]
+            self.current_frame_index - 1, 0, self._frames_count - 1)
+        self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
 
     def go_to_next_frame(self):
         self.current_frame_index = clamp(
-            self.current_frame_index+1, 0, self._frames_count-1)
-        self.prev_frame = self.play_parser.frames[self.current_frame_index-1]
+            self.current_frame_index + 1, 0, self._frames_count - 1)
+        self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
 
     def set_current_frame(self, index):
@@ -98,23 +108,24 @@ class Analyzer:
     def set_current_hitobject(self, index):
         self.current_hitobject_index = index
         try:
-            self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index-1]
+            self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index - 1]
             self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
         except IndexError:
             print("Index error")
 
     def go_to_next_hitobject(self):
         self.current_hitobject_index = clamp(
-            self.current_hitobject_index+1, 0, self._hitobjects_count-1)
-        self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index-1]
+            self.current_hitobject_index + 1, 0, self._hitobjects_count - 1)
+        self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index - 1]
         self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
 
     def check_if_hit(self, frame, hitobject):
-        diff = pow(frame.x-hitobject.x, 2)+pow(frame.y-(384-hitobject.y), 2)
+        diff = pow(frame.x - hitobject.x, 2) + \
+            pow(frame.y - (384 - hitobject.y), 2)
         return (pow(diff, 0.5) < self.circle_radius)
 
     def get_ms_delay(self, frame, hitobject):
-        diff = hitobject.time-frame.time
+        diff = hitobject.time - frame.time
         # print(diff)
         diff = abs(diff)
         if diff >= self.hit_50:
@@ -136,22 +147,29 @@ class Analyzer:
             show_outside:   bool-- ...
 
         """
+        start_time = time.time()
         gui = GUI(512, 384)
 
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
-        button1 = Button(256-25, 300, 50, 20, "Pause", self.switch_running)
+        button_pause = Button(256 - 25, 300, 50, 20, "Pause", self.switch_running)
+
+        button_dt = Button(0, 0, 30, 40, "DT", self.switch_speed_to_dt)
+        button_nm = Button(0, 50, 30, 40, "NM", self.switch_speed_to_nm)
+        button_ht = Button(0, 100, 30, 40, "HT", self.switch_speed_to_ht)
         slider = Slider(22, 350, 470, 5, self.current_frame.time,
                         self.play_parser.frames[-1].time)
-        debuglog = DebugBox(380,10,120,200)
+        debuglog = DebugBox(380, 10, 120, 200)
         f = open("out.txt", "w")
         while True:
             debuglog.clear()
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
-            debuglog.add_text(f"Hit Object index: {self.current_hitobject_index}")
-            button1.set_text("Pause" if self.running else "Play")
+            debuglog.add_text(
+                f"Hit Object index: {self.current_hitobject_index}")
+            debuglog.add_text(f"Speed: x{self.anim_speed}")
+            button_pause.set_text("Pause" if self.running else "Play")
             hc.set_position(self.current_hitobject.x,
-                            384-self.current_hitobject.y)
+                            384 - self.current_hitobject.y)
 
             if self.check_if_hit(self.current_frame, self.current_hitobject):
                 hc.set_color((0, 255, 0))
@@ -168,7 +186,17 @@ class Analyzer:
                 self.get_trailing_frames(self.trail_length))
             gui.draw()
             print(slider.get_value())
-            time.sleep(0.01)
+
+            end_time = time.time()
+            next_frame = self.get_relative_frame(1)
+            delay = end_time - start_time
+            time_difference = (
+                next_frame.time - self.current_frame.time) * 0.001
+            wait_for = max(0.0001, time_difference - delay) / self.anim_speed
+
+            time.sleep(wait_for)
+            start_time = time.time()
+
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
 
