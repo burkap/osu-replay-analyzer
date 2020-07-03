@@ -3,6 +3,7 @@ import pygame
 from pygame import gfxdraw
 from utils.mathhelper import clamp
 
+
 class GUI:
     def __init__(self, width, height):
         pygame.init()
@@ -107,7 +108,7 @@ class Button(GUI):
         self.text = text
         self.on_click = on_click
 
-        self.font = pygame.font.Font("freesansbold.ttf", 15)
+        self.font = pygame.font.Font("NotoSans-Black.ttf", 15)
 
         GUI.elements.append(self)
 
@@ -184,3 +185,38 @@ class Slider(GUI):
         if self.is_dragging:
             gfxdraw.filled_circle(GUI.screen, circle_origin_x,
                                   circle_origin_y, 5, (0, 0, 0))
+
+
+class DebugBox(GUI):
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+        self.texts = []
+        self.font_size = 10
+        self.font = pygame.font.Font("NotoSans-Black.ttf", self.font_size)
+        GUI.elements.append(self)
+
+    def add_text(self, text):
+        self.texts.append(text)
+
+    def clear(self):
+        self.texts = []
+
+    def display(self):
+        labels = []
+        label_rects = []
+        pygame.draw.rect(GUI.screen, (255, 255, 255),
+                         (self.x, self.y, self.width, self.height), 1)
+        for index, text in enumerate(self.texts):
+            tmp_label = self.font.render(text, True, (255, 255, 255))
+            tmp_rect = tmp_label.get_rect()
+            tmp_rect.center = ((self.x+(self.width/2)),
+                               (self.y)+10+(index*self.font_size))
+
+            labels.append(tmp_label)
+            label_rects.append(tmp_rect)
+        for i in range(len(labels)):
+            GUI.screen.blit(labels[i], label_rects[i])
