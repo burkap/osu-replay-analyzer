@@ -1,5 +1,33 @@
 import math
 
+
+def get_closest_as_index(arr, target):
+    n = len(arr)
+    low = 0
+    high = n - 1
+    mid = 0
+
+    if target >= arr[n - 1]:
+        return arr[n - 1]
+
+    if target <= arr[0]:
+        return arr[0]
+
+    while low < high:
+        mid = (low + high) // 2
+        if target < arr[mid]:
+            high = mid
+        elif target > arr[mid]:
+            low = mid + 1
+        else:
+            return mid
+
+    if target < arr[mid]:
+        return mid if target - arr[mid - 1] >= arr[mid] - target else mid - 1
+    else:
+        return mid + 1 if target - arr[mid] >= arr[mid+1] - target else mid
+
+
 def clamp(value, mn, mx):
     return min(max(mn, value), mx)
 
