@@ -5,7 +5,7 @@ from utils.mathhelper import clamp
 
 
 class GUI:
-    def __init__(self, width, height, offset_x, offset_y):
+    def __init__(self, width, height, offset_x=0, offset_y=0):
         pygame.init()
         self.offset_x = offset_x
         self.offset_y = offset_y
