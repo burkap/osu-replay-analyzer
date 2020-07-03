@@ -1,8 +1,8 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button, Slider
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox
 import time
-from utils.mathhelper import clamp
+from utils.mathhelper import clamp, get_closest_as_index
 
 
 class Analyzer:
@@ -76,8 +76,9 @@ class Analyzer:
         return frames
 
     def get_relative_frame(self, r_index: int):
-        # TODO: add boundary checks
-        return self.play_parser.frames[self.current_frame_index+r_index]
+        abs_frame_index = self.current_frame_index+r_index
+        abs_frame_index = clamp(abs_frame_index, 0, self._frames_count-1)
+        return self.play_parser.frames[abs_frame_index]
 
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
@@ -91,11 +92,21 @@ class Analyzer:
         self.prev_frame = self.play_parser.frames[self.current_frame_index-1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
 
+    def set_current_frame(self, index):
+        self.current_frame_index = index
+
+    def set_current_hitobject(self, index):
+        self.current_hitobject_index = index
+        try:
+            self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index-1]
+            self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
+        except IndexError:
+            print("Index error")
+
     def go_to_next_hitobject(self):
         self.current_hitobject_index = clamp(
             self.current_hitobject_index+1, 0, self._hitobjects_count-1)
         self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index-1]
-        print(self.current_hitobject_index)
         self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
 
     def check_if_hit(self, frame, hitobject):
@@ -130,11 +141,15 @@ class Analyzer:
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
         button1 = Button(256-25, 300, 50, 20, "Pause", self.switch_running)
-        slider = Slider(22, 350, 470, 5, self.current_frame.time, self.play_parser.frames[self._frames_count-1].time)
+        slider = Slider(22, 350, 470, 5, self.current_frame.time,
+                        self.play_parser.frames[-1].time)
+        debuglog = DebugBox(380,10,120,200)
         f = open("out.txt", "w")
         while True:
+            debuglog.clear()
+            debuglog.add_text(f"Frame index: {self.current_frame_index}")
+            debuglog.add_text(f"Hit Object index: {self.current_hitobject_index}")
             button1.set_text("Pause" if self.running else "Play")
-            slider.set_value(self.current_frame.time)
             hc.set_position(self.current_hitobject.x,
                             384-self.current_hitobject.y)
 
@@ -142,11 +157,17 @@ class Analyzer:
                 hc.set_color((0, 255, 0))
             else:
                 hc.set_color((255, 0, 0))
+            if slider.is_dragging:
+                self.set_current_frame(get_closest_as_index(
+                    self.play_parser.frame_times, int(slider.get_value())))
+                self.set_current_hitobject(get_closest_as_index(
+                    [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
             cursor.set_trail_points(
                 self.get_trailing_frames(self.trail_length))
             gui.draw()
+            print(slider.get_value())
             time.sleep(0.01)
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
