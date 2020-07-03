@@ -2,6 +2,7 @@ import sys
 import pygame
 from pygame import gfxdraw
 from utils.mathhelper import clamp
+from utils.curves import Bezier
 
 
 class GUI:
@@ -87,6 +88,69 @@ class Hitcircle(GUI):
             self.color)
         gfxdraw.filled_circle(GUI.play_area, self.x, self.y,
                               self.radius, self.color)
+
+
+class Hitobject_Slider(GUI):
+    def __init__(self, control_points, circle_radius,
+                 show_control_points=False, color=(255, 0, 0)):
+        self.control_points = control_points
+        self.bezier = Bezier(control_points)
+        self.circle_radius = circle_radius
+        self.color = color
+        self.show_control_points = show_control_points
+        GUI.hitcircles.append(self)
+        self.n = 0
+        self.is_visible = True
+
+    def set_control_points(self, control_points):
+        self.bezier = Bezier(control_points)
+
+    def set_visibility(self, b):
+        self.is_visible = b
+
+    def display(self):
+        if not self.is_visible:
+            return
+        for i in [self.bezier.pos[0], self.bezier.pos[len(
+                self.bezier.pos) // 2], self.bezier.pos[-1]]:
+            a = i
+            gfxdraw.aacircle(
+                GUI.play_area,
+                int(a.x),
+                int(a.y),
+                int(self.circle_radius),
+                (0, 0, 255))
+        l1 = []
+        l2 = []
+        for i in range(1, len(self.bezier.pos), 10):
+            diffx = self.bezier.pos[i].x - self.bezier.pos[i - 1].x
+            diffy = self.bezier.pos[i].y - self.bezier.pos[i - 1].y
+            slope = diffy / diffx
+            b = pow(pow(self.circle_radius, 2) / (pow(slope, 2) + 1), 0.5)
+            a = -slope * b
+            l1.append((self.bezier.pos[i].x + a, self.bezier.pos[i].y + b))
+            l2.append((self.bezier.pos[i].x - a, self.bezier.pos[i].y - b))
+
+        pygame.draw.aalines(
+            GUI.play_area,
+            pygame.Color("cyan"),
+            False,
+            l1,
+            3)
+
+        pygame.draw.aalines(GUI.play_area, pygame.Color("gray"), False, [
+            (i.x, i.y) for i in self.bezier.pos], 3)
+
+        pygame.draw.aalines(
+            GUI.play_area,
+            pygame.Color("cyan"),
+            False,
+            l2,
+            3)
+        if self.show_control_points:
+            for i in self.control_points:
+                pygame.draw.circle(GUI.play_area, (255, 0, 0),
+                                   (i.x, i.y), 5, 1)
 
 
 class Cursor(GUI):
