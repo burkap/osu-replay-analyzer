@@ -9,7 +9,6 @@ class Analyzer:
     """
         replay_file     -- replay.file  (.osr)
         beatmap_file    -- beatmap file (.osu)
-
     """
 
     def __init__(self, replay_file: str, beatmap_file: str):
@@ -145,14 +144,19 @@ class Analyzer:
         """
             draw_plot:      bool-- ...
             show_outside:   bool-- ...
-
         """
         start_time = time.time()
         gui = GUI(512, 384)
 
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
-        button_pause = Button(256 - 25, 300, 50, 20, "Pause", self.switch_running)
+        button_pause = Button(
+            256 - 25,
+            300,
+            50,
+            20,
+            "Pause",
+            self.switch_running)
 
         button_dt = Button(0, 0, 30, 40, "DT", self.switch_speed_to_dt)
         button_nm = Button(0, 50, 30, 40, "NM", self.switch_speed_to_nm)
@@ -192,6 +196,8 @@ class Analyzer:
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
+            else:
+                slider.set_value(self.play_parser.frames[self.current_frame_index].time)
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
             cursor.set_trail_points(
