@@ -8,10 +8,10 @@ def get_closest_as_index(arr, target):
     mid = 0
 
     if target >= arr[n - 1]:
-        return arr[n - 1]
+        return n-1
 
     if target <= arr[0]:
-        return arr[0]
+        return 0
 
     while low < high:
         mid = (low + high) // 2
