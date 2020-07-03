@@ -185,7 +185,6 @@ class Analyzer:
             cursor.set_trail_points(
                 self.get_trailing_frames(self.trail_length))
             gui.draw()
-            print(slider.get_value())
 
             end_time = time.time()
             next_frame = self.get_relative_frame(1)

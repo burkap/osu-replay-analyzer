@@ -116,10 +116,10 @@ class Button(GUI):
         self.text = text
 
     def display(self):
-        if(self.x+self.width > GUI.mouse[0] > self.x and self.y+self.height > GUI.mouse[1] > self.y):
+        if(self.x + self.width > GUI.mouse[0] > self.x and self.y + self.height > GUI.mouse[1] > self.y):
             pygame.draw.rect(GUI.screen, (220, 220, 220),
                              (self.x, self.y, self.width, self.height))
-            if GUI.is_single_click and self.on_click != None:
+            if GUI.is_single_click and self.on_click is not None:
                 self.on_click()
         else:
             pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -127,8 +127,8 @@ class Button(GUI):
 
         text_surface = self.font.render(self.text, True, (0, 0, 0))
         text_rect = text_surface.get_rect()
-        text_rect.center = ((self.x+(self.width/2)),
-                            (self.y+(self.height/2)))
+        text_rect.center = ((self.x + (self.width / 2)),
+                            (self.y + (self.height / 2)))
         GUI.screen.blit(text_surface, text_rect)
 
 
@@ -154,12 +154,13 @@ class Slider(GUI):
         self.value = value
 
     def check_mouse_on_ball(self, x, y):
-        diff = pow(x-GUI.mouse[0], 2)+pow(y-GUI.mouse[1], 2)
+        diff = pow(x - GUI.mouse[0], 2) + pow(y - GUI.mouse[1], 2)
         return (pow(diff, 0.5) < 7)
 
     def display(self):
-        circle_origin_x = self.x + int(self.width*(self.value/self.max_value))
-        circle_origin_y = self.y + int(self.height/2)
+        circle_origin_x = self.x + \
+            int(self.width * (self.value / self.max_value))
+        circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
                          (self.x, self.y, self.width, self.height))
@@ -171,8 +172,10 @@ class Slider(GUI):
                 self.drag_origin_y = GUI.mouse[1]
         if self.is_dragging and GUI.is_holding_down:
             circle_origin_x = GUI.mouse[0]
-            circle_origin_x = clamp(circle_origin_x, self.x, self.x+self.width)
-            self.value = (circle_origin_x-self.x)*self.max_value/self.width
+            circle_origin_x = clamp(
+                circle_origin_x, self.x, self.x + self.width)
+            self.value = (circle_origin_x - self.x) * \
+                self.max_value / self.width
         else:
             self.is_dragging = False
 
@@ -213,8 +216,8 @@ class DebugBox(GUI):
         for index, text in enumerate(self.texts):
             tmp_label = self.font.render(text, True, (255, 255, 255))
             tmp_rect = tmp_label.get_rect()
-            tmp_rect.center = ((self.x+(self.width/2)),
-                               (self.y)+10+(index*self.font_size))
+            tmp_rect.center = ((self.x + (self.width / 2)),
+                               (self.y) + 10 + (index * self.font_size))
 
             labels.append(tmp_label)
             label_rects.append(tmp_rect)
