@@ -175,15 +175,6 @@ class Analyzer:
                 hc.set_color((0, 255, 0))
             else:
                 hc.set_color((255, 0, 0))
-            if slider.is_dragging:
-                self.set_current_frame(get_closest_as_index(
-                    self.play_parser.frame_times, int(slider.get_value())))
-                self.set_current_hitobject(get_closest_as_index(
-                    [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
-            cursor.set_cursor_position(self.current_frame.x,
-                                       self.current_frame.y)
-            cursor.set_trail_points(
-                self.get_trailing_frames(self.trail_length))
             gui.draw()
 
             end_time = time.time()
@@ -195,6 +186,16 @@ class Analyzer:
 
             time.sleep(wait_for)
             start_time = time.time()
+
+            if slider.is_dragging:
+                self.set_current_frame(get_closest_as_index(
+                    self.play_parser.frame_times, int(slider.get_value())))
+                self.set_current_hitobject(get_closest_as_index(
+                    [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
+            cursor.set_cursor_position(self.current_frame.x,
+                                       self.current_frame.y)
+            cursor.set_trail_points(
+                self.get_trailing_frames(self.trail_length))
 
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
