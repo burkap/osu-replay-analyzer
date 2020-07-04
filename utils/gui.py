@@ -80,13 +80,16 @@ class Hitcircle(GUI):
         del self
 
     def display(self):
+        osu_width, osu_height = (512, 384)
+        play_area_width, play_area_height = GUI.play_area.get_size()
+        offset_width, offset_height = ((play_area_width - osu_width) // 2, (play_area_height - osu_height) // 2)
         gfxdraw.aacircle(
             GUI.play_area,
-            self.x,
-            self.y,
+            self.x + offset_width,
+            self.y + offset_height,
             self.radius,
             self.color)
-        gfxdraw.filled_circle(GUI.play_area, self.x, self.y,
+        gfxdraw.filled_circle(GUI.play_area, self.x + offset_width, self.y + offset_height,
                               self.radius, self.color)
 
 
@@ -158,6 +161,11 @@ class Cursor(GUI):
         self.x = int(position[0])
         self.y = int(position[1])
         self.trail_points = trail_points
+
+        play_area_width, play_area_height = GUI.play_area.get_size()
+        self.offset_width = (play_area_width - 512) // 2  # offset between play area and GUI surface
+        self.offset_height = (play_area_height - 384) // 2  # offset between play area and GUI surface
+
         GUI.cursor = self
 
     def set_cursor_position(self, x, y):
@@ -165,11 +173,12 @@ class Cursor(GUI):
         self.y = int(y)
 
     def set_trail_points(self, trail_points):
-        self.trail_points = trail_points
+        self.trail_points = [(point[0] + self.offset_width, point[1] + self.offset_height) for point in trail_points]
+        #self.trail_points = trail_points
 
     def display(self):
         pygame.draw.circle(GUI.play_area, (0, 255, 255),
-                           (self.x, self.y), 5, 2)
+                           (self.x + self.offset_width, self.y + self.offset_height), 5, 2)
         if len(self.trail_points) > 1:
             pygame.draw.aalines(GUI.play_area, (0, 0, 255),
                                 False, self.trail_points)
@@ -192,7 +201,7 @@ class Button(GUI):
         self.text = text
 
     def display(self):
-        if(self.x + self.width > GUI.mouse[0] > self.x and self.y + self.height > GUI.mouse[1] > self.y):
+        if (self.x + self.width > GUI.mouse[0] > self.x and self.y + self.height > GUI.mouse[1] > self.y):
             pygame.draw.rect(GUI.screen, (220, 220, 220),
                              (self.x, self.y, self.width, self.height))
             if GUI.is_single_click and self.on_click is not None:
@@ -235,7 +244,7 @@ class Slider(GUI):
 
     def display(self):
         circle_origin_x = self.x + \
-            int(self.width * (self.value / self.max_value))
+                          int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -251,7 +260,7 @@ class Slider(GUI):
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                self.max_value / self.width
+                         self.max_value / self.width
         else:
             self.is_dragging = False
 

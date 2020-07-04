@@ -120,7 +120,7 @@ class Analyzer:
 
     def check_if_hit(self, frame, hitobject):
         diff = pow(frame.x - hitobject.x, 2) + \
-            pow(frame.y - (384 - hitobject.y), 2)
+               pow(frame.y - (384 - hitobject.y), 2)
         return (pow(diff, 0.5) < self.circle_radius)
 
     def get_ms_delay(self, frame, hitobject):
@@ -146,24 +146,29 @@ class Analyzer:
             show_outside:   bool-- ...
         """
         start_time = time.time()
-        gui = GUI(512, 384, 130, 60)
+        play_area_width, play_area_height = (800, 600)
+        padding_width, padding_height = (130, 60)
+        gui_width, gui_height = (play_area_width+padding_width*2, play_area_height+padding_height*2)
+        gui = GUI(play_area_width, play_area_height, padding_width, padding_height)
 
         hc = Hitcircle(0, 0, self.circle_radius)
         cursor = Cursor((0, 0))
         button_pause = Button(
-            10,
-            384+80-10,
+            30,
+            250,
             50,
-            20,
+            30,
             "Pause",
             self.switch_running)
 
-        button_dt = Button(0, 0, 30, 40, "DT", self.switch_speed_to_dt)
-        button_nm = Button(0, 50, 30, 40, "NM", self.switch_speed_to_nm)
-        button_ht = Button(0, 100, 30, 40, "HT", self.switch_speed_to_ht)
-        slider = Slider(80, 384+80, 512+150, 5, self.current_frame.time,
+        button_dt = Button(30, 100, 50, 30, "DT", self.switch_speed_to_dt)
+        button_nm = Button(30, 150, 50, 30, "NM", self.switch_speed_to_nm)
+        button_ht = Button(30, 200, 50, 30, "HT", self.switch_speed_to_ht)
+
+        slider = Slider(padding_width + 35, gui_height-50, gui_width - padding_width*2 - 70, 5, self.current_frame.time,
                         self.play_parser.frames[-1].time)
-        debuglog = DebugBox(512+135, 10, 120, 200)
+
+        debuglog = DebugBox(gui_width - 125, 10, 120, 200)
         f = open("out.txt", "w")
         while True:
             debuglog.clear()
@@ -172,8 +177,13 @@ class Analyzer:
                 f"Hit Object index: {self.current_hitobject_index}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
             button_pause.set_text("Pause" if self.running else "Play")
-            hc.set_position(self.current_hitobject.x,
-                            384 - self.current_hitobject.y)
+
+            if self.play_parser.mods & 16:  # if hardrock
+                hc.set_position(self.current_hitobject.x,
+                                384 - self.current_hitobject.y)
+            else:
+                hc.set_position(self.current_hitobject.x,
+                                self.current_hitobject.y)
 
             if self.check_if_hit(self.current_frame, self.current_hitobject):
                 hc.set_color((0, 255, 0))
@@ -185,7 +195,7 @@ class Analyzer:
             next_frame = self.get_relative_frame(1)
             delay = end_time - start_time
             time_difference = (
-                next_frame.time - self.current_frame.time) * 0.001
+                                      next_frame.time - self.current_frame.time) * 0.001
             wait_for = max(0.0001, time_difference - delay) / self.anim_speed
 
             time.sleep(wait_for)
