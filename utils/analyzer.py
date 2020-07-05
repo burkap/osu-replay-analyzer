@@ -169,11 +169,19 @@ class Analyzer:
         for h in self.beatmap_parser.hitobjects:
             hc.append(Hitcircle(
                 h.x,
-                384 - h.y if osu.is_hardrock else i.y,
+                384 - h.y if osu.is_hardrock else h.y,
                 h.time,
                 self.circle_radius))
             if h.type & 2:
-                sliders.append(Hitobject_Slider([Vec2(i.x, 384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],self.circle_radius, h.time, h.duration))
+                sliders.append(
+                    Hitobject_Slider(
+                        [
+                            Vec2(
+                                i.x,
+                                384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],
+                        self.circle_radius,
+                        h.time,
+                        h.duration))
         cursor = Cursor((0, 0), show_path=True)
         button_pause = Button(
             30,
@@ -228,7 +236,7 @@ class Analyzer:
                 self.get_trailing_frames(self.trail_length))
 
             cursor.set_path_points(
-                self.get_upcoming_frames(self.trail_length*2//3))
+                self.get_upcoming_frames(self.trail_length * 2 // 3))
 
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
