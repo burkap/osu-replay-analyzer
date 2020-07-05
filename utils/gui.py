@@ -16,11 +16,16 @@ class GUI:
 
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
+        GUI.keys = pygame.key.get_pressed()
 
         GUI.clock = pygame.time.Clock()
         GUI.hitcircles = []
         GUI.elements = []
         GUI.cursor = Cursor((0, 0))
+
+        GUI.is_holding_down_key = [0] * len(GUI.keys)
+        GUI.is_single_press_key = [0] * len(GUI.keys)
+
         GUI.is_holding_down = False
         GUI.is_single_click = False
 
@@ -38,8 +43,22 @@ class GUI:
             GUI.is_single_click = False
             GUI.is_holding_down = False
 
+    def keyboard_events(self):
+        GUI.keys = pygame.key.get_pressed()
+        for i in range(len(GUI.keys)):
+            if GUI.keys[i]:
+                if not GUI.is_holding_down_key[i]:
+                    GUI.is_single_press_key[i] = True
+                    GUI.is_holding_down_key[i] = True
+                else:
+                    GUI.is_single_press_key[i] = False
+            else:
+                GUI.is_single_press_key[i] = False
+                GUI.is_holding_down_key[i] = False
+
     def draw(self):
         self.mouse_events()
+        self.keyboard_events()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
