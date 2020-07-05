@@ -331,16 +331,12 @@ class Slider(GUI):
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
                 if GUI.is_single_click:
-                    self.is_setting_value = True
                     circle_origin_x = GUI.mouse[0]
                     circle_origin_x = clamp(
                         circle_origin_x, self.x, self.x + self.width)
                     self.value = (circle_origin_x - self.x) * \
                                  self.max_value / self.width
-                else:
-                    self.is_setting_value = False
-            else:
-                self.is_setting_value = False
+                    self.is_dragging_ball = True
 
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
                          circle_origin_y, 7, (0, 255, 255))
