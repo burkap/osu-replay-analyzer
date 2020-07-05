@@ -105,7 +105,8 @@ class Hitcircle(OSU):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
         if is_inside_radius(
-                (OSU.current_frame.x, OSU.current_frame.y), (self.x, 384 - self.y if OSU.is_hardrock else self.y),
+                (OSU.current_frame.x, OSU.current_frame.y), (self.x,
+                                                             384 - self.y if OSU.is_hardrock else self.y),
                 self.radius):
             self.set_color((0, 255, 0))
         else:
@@ -211,10 +212,13 @@ class Hitobject_Slider(OSU):
 
 
 class Cursor(GUI):
-    def __init__(self, position: tuple, trail_points: list = []):
+    def __init__(self, position: tuple, trail_points: list = [],
+                 path_points: list = [], show_path=False):
         self.x = int(position[0])
         self.y = int(position[1])
         self.trail_points = trail_points
+        self.path_points = path_points
+        self.show_path = show_path
 
         play_area_width, play_area_height = GUI.play_area.get_size()
         # offset between play area and GUI surface
@@ -233,6 +237,11 @@ class Cursor(GUI):
             (point[0] + self.offset_width,
              point[1] + self.offset_height) for point in trail_points]
         # self.trail_points = trail_points
+    
+    def set_path_points(self, path_points):
+        self.path_points = [
+            (point[0] + self.offset_width,
+             point[1] + self.offset_height) for point in path_points]
 
     def display(self):
         pygame.draw.circle(GUI.play_area, (0, 255, 255),
@@ -240,6 +249,10 @@ class Cursor(GUI):
         if len(self.trail_points) > 1:
             pygame.draw.aalines(GUI.play_area, (0, 0, 255),
                                 False, self.trail_points)
+
+        if len(self.path_points) > 1 and self.show_path:
+            pygame.draw.aalines(GUI.play_area, (255, 0, 255),
+                                False, self.path_points)
 
 
 class Button(GUI):
@@ -303,14 +316,15 @@ class Slider(GUI):
         return (pow(diff, 0.5) < 7)
 
     def check_mouse_on_slider(self):
-        if self.x + self.width * 2 > GUI.mouse[0] > self.x and self.y + self.height * 2 > GUI.mouse[1] > self.y:
+        if self.x + self.width * \
+                2 > GUI.mouse[0] > self.x and self.y + self.height * 2 > GUI.mouse[1] > self.y:
             return True
         else:
             return False
 
     def display(self):
         circle_origin_x = self.x + \
-                          int(self.width * (self.value / self.max_value))
+            int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -326,7 +340,7 @@ class Slider(GUI):
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                         self.max_value / self.width
+                self.max_value / self.width
         else:
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
@@ -335,7 +349,7 @@ class Slider(GUI):
                     circle_origin_x = clamp(
                         circle_origin_x, self.x, self.x + self.width)
                     self.value = (circle_origin_x - self.x) * \
-                                 self.max_value / self.width
+                        self.max_value / self.width
                     self.is_dragging_ball = True
 
         gfxdraw.aacircle(GUI.screen, circle_origin_x,

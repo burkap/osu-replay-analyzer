@@ -84,6 +84,13 @@ class Analyzer:
             frames.append((f.x, f.y))
         return frames
 
+    def get_upcoming_frames(self, n):
+        frames = []
+        for i in range(0, n):
+            f = self.get_relative_frame(+i)
+            frames.append((f.x, f.y))
+        return frames
+
     def get_relative_frame(self, r_index: int):
         abs_frame_index = self.current_frame_index + r_index
         abs_frame_index = clamp(abs_frame_index, 0, self._frames_count - 1)
@@ -167,7 +174,7 @@ class Analyzer:
                 self.circle_radius))
             if h.type & 2:
                 sliders.append(Hitobject_Slider([Vec2(i.x, 384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],self.circle_radius, h.time, h.duration))
-        cursor = Cursor((0, 0))
+        cursor = Cursor((0, 0), show_path=True)
         button_pause = Button(
             30,
             250,
@@ -219,6 +226,9 @@ class Analyzer:
                                        self.current_frame.y)
             cursor.set_trail_points(
                 self.get_trailing_frames(self.trail_length))
+
+            cursor.set_path_points(
+                self.get_upcoming_frames(self.trail_length*2//3))
 
             print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
                 self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
