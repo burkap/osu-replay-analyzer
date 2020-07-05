@@ -36,7 +36,7 @@ def is_inside_radius(point, origin, radius):
         radius  --- int
     """
     diff = pow(point[0] - origin[0], 2) + \
-        pow(point[1] - origin[1], 2)
+           pow(point[1] - origin[1], 2)
     return (pow(diff, 0.5) < radius)
 
 
@@ -66,10 +66,10 @@ def cpn(p, n):
 
 def catmull(p, t):  # WARNING:   Worst math formula incomming
     return 0.5 * (
-        (2 * p[1]) +
-        (-p[0] + p[2]) * t +
-        (2 * p[0] - 5 * p[1] + 4 * p[2] - p[3]) * pow(t, 2) +
-        (-p[0] + 3 * p[1] - 3 * p[2] + p[3]) * pow(t, 3))
+            (2 * p[1]) +
+            (-p[0] + p[2]) * t +
+            (2 * p[0] - 5 * p[1] + 4 * p[2] - p[3]) * pow(t, 2) +
+            (-p[0] + 3 * p[1] - 3 * p[2] + p[3]) * pow(t, 3))
 
 
 def point_on_line(p0, p1, length):

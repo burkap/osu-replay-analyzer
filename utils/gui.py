@@ -77,6 +77,11 @@ class Hitcircle(OSU):
         self.time = time
         self.color = color
 
+        osu_width, osu_height = (512, 384)
+        play_area_width, play_area_height = GUI.play_area.get_size()
+        self.offset_width, self.offset_height = (
+            (play_area_width - osu_width) // 2, (play_area_height - osu_height) // 2)
+
         GUI.hitcircles.append(self)
 
     def set_position(self, x, y):
@@ -99,12 +104,9 @@ class Hitcircle(OSU):
     def display(self):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
-        osu_width, osu_height = (512, 384)
-        play_area_width, play_area_height = GUI.play_area.get_size()
-        offset_width, offset_height = (
-            (play_area_width - osu_width) // 2, (play_area_height - osu_height) // 2)
         if is_inside_radius(
-                (OSU.current_frame.x, OSU.current_frame.y), (self.x, 384 - self.y if OSU.is_hardrock else self.y), self.radius):
+                (OSU.current_frame.x, OSU.current_frame.y), (self.x, 384 - self.y if OSU.is_hardrock else self.y),
+                self.radius):
             self.set_color((0, 255, 0))
         else:
             self.set_color((255, 0, 0))
@@ -113,8 +115,8 @@ class Hitcircle(OSU):
         for i in range(2):  # <---- line width
             gfxdraw.aacircle(
                 GUI.play_area,
-                self.x + offset_width,
-                self.y + offset_height,
+                self.x + self.offset_width,
+                self.y + self.offset_height,
                 self.radius + i +
                 int(min((self.time - OSU.current_frame.time) / 5, 90)),
                 (255, 255, 255))
@@ -122,11 +124,11 @@ class Hitcircle(OSU):
         # Hit Circle
         gfxdraw.aacircle(
             GUI.play_area,
-            self.x + offset_width,
-            self.y + offset_height,
+            self.x + self.offset_width,
+            self.y + self.offset_height,
             self.radius,
             self.color)
-        gfxdraw.filled_circle(GUI.play_area, self.x + offset_width, self.y + offset_height,
+        gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, self.color)
 
 
@@ -230,7 +232,7 @@ class Cursor(GUI):
         self.trail_points = [
             (point[0] + self.offset_width,
              point[1] + self.offset_height) for point in trail_points]
-        #self.trail_points = trail_points
+        # self.trail_points = trail_points
 
     def display(self):
         pygame.draw.circle(GUI.play_area, (0, 255, 255),
@@ -286,7 +288,8 @@ class Slider(GUI):
         self.drag_origin_x = 0
         self.drag_origin_y = 0
 
-        self.is_dragging = False
+        self.is_dragging_ball = False
+        self.is_setting_value = False
         GUI.elements.append(self)
 
     def get_value(self):
@@ -299,9 +302,15 @@ class Slider(GUI):
         diff = pow(x - GUI.mouse[0], 2) + pow(y - GUI.mouse[1], 2)
         return (pow(diff, 0.5) < 7)
 
+    def check_mouse_on_slider(self):
+        if self.x + self.width * 2 > GUI.mouse[0] > self.x and self.y + self.height * 2 > GUI.mouse[1] > self.y:
+            return True
+        else:
+            return False
+
     def display(self):
         circle_origin_x = self.x + \
-            int(self.width * (self.value / self.max_value))
+                          int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -309,17 +318,29 @@ class Slider(GUI):
 
         if self.check_mouse_on_ball(circle_origin_x, circle_origin_y):
             if GUI.is_single_click:
-                self.is_dragging = True
+                self.is_dragging_ball = True
                 self.drag_origin_x = GUI.mouse[0]
                 self.drag_origin_y = GUI.mouse[1]
-        if self.is_dragging and GUI.is_holding_down:
+        if self.is_dragging_ball and GUI.is_holding_down:
             circle_origin_x = GUI.mouse[0]
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                self.max_value / self.width
+                         self.max_value / self.width
         else:
-            self.is_dragging = False
+            self.is_dragging_ball = False
+            if self.check_mouse_on_slider():
+                if GUI.is_single_click:
+                    self.is_setting_value = True
+                    circle_origin_x = GUI.mouse[0]
+                    circle_origin_x = clamp(
+                        circle_origin_x, self.x, self.x + self.width)
+                    self.value = (circle_origin_x - self.x) * \
+                                 self.max_value / self.width
+                else:
+                    self.is_setting_value = False
+            else:
+                self.is_setting_value = False
 
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
                          circle_origin_y, 7, (0, 255, 255))
@@ -327,7 +348,7 @@ class Slider(GUI):
                               circle_origin_y, 7, (0, 255, 255))
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
                          circle_origin_y, 5, (0, 0, 0))
-        if self.is_dragging:
+        if self.is_dragging_ball:
             gfxdraw.filled_circle(GUI.screen, circle_origin_x,
                                   circle_origin_y, 5, (0, 0, 0))
 

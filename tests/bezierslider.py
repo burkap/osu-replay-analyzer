@@ -8,10 +8,6 @@ gui = GUI(600, 300)
 control_points = [Vec2(100, 100), Vec2(200, 200),
                   Vec2(300, 100), Vec2(400, 200), Vec2(500, 100)]
 
-
-#hc1 = Hitcircle(control_points[0].x, control_points[0].y)
-
-#hc1 = Hitcircle(control_points[-1].x, control_points[-1].y)
 slider = Hitobject_Slider(control_points, 31, True)
 
 selected = None

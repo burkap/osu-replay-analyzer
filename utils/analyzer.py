@@ -201,7 +201,7 @@ class Analyzer:
             time.sleep(wait_for)
             start_time = time.time()
 
-            if slider.is_dragging:
+            if slider.is_dragging_ball or slider.is_setting_value:
                 self.set_current_frame(get_closest_as_index(
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
