@@ -103,6 +103,11 @@ class Analyzer:
 
     def set_current_frame(self, index):
         self.current_frame_index = index
+        try:
+            self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
+            self.current_frame = self.play_parser.frames[self.current_frame_index]
+        except IndexError:
+            print("Index error")
 
     def set_current_hitobject(self, index):
         self.current_hitobject_index = index
