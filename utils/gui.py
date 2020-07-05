@@ -368,6 +368,32 @@ class Slider(GUI):
                                   circle_origin_y, 5, (0, 0, 0))
 
 
+class TextBox(GUI):
+    def __init__(self, x, y, width, height, text):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.text = text
+
+        self.font_size = 10
+        self.font = pygame.font.Font("NotoSans-Black.ttf", self.font_size)
+        GUI.elements.append(self)
+
+    def set_text(self, text):
+        self.text = text
+
+    def clear(self):
+        self.text = ""
+
+    def display(self):
+        label = self.font.render(self.text, True, (255, 255, 255))
+        rect = label.get_rect()
+        rect.center = ((self.x + (self.width / 2)),
+                       (self.y) + (self.height / 2))
+        GUI.screen.blit(label, rect)
+
+
 class DebugBox(GUI):
     def __init__(self, x, y, width, height):
         self.x = x
