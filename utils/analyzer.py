@@ -1,8 +1,8 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox
 import time
-from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2
+from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 
 
 class Analyzer:
@@ -197,11 +197,13 @@ class Analyzer:
 
         slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5, self.current_frame.time,
                         self.play_parser.frames[-1].time)
-
+        time_display = TextBox(padding_width - 10, gui_height -
+                               58, 50, 20, str(self.current_frame.time))
         debuglog = DebugBox(gui_width - 125, 10, 120, 200)
         f = open("out.txt", "w")
         while True:
             osu.set_current_frame(self.current_frame)
+            time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(
