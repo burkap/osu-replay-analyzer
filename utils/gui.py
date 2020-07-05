@@ -104,9 +104,9 @@ class Hitcircle(OSU):
     def display(self):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
+
         if is_inside_radius(
-                (OSU.current_frame.x, OSU.current_frame.y), (self.x,
-                                                             384 - self.y if OSU.is_hardrock else self.y),
+                (OSU.current_frame.x, OSU.current_frame.y), (self.x, self.y),
                 self.radius):
             self.set_color((0, 255, 0))
         else:
@@ -131,6 +131,12 @@ class Hitcircle(OSU):
             self.color)
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, self.color)
+        gfxdraw.aacircle(
+            GUI.play_area,
+            self.x + self.offset_width,
+            self.y + self.offset_height,
+            2,
+            (255, 255, 255))
 
 
 class Hitobject_Slider(OSU):
@@ -236,8 +242,7 @@ class Cursor(GUI):
         self.trail_points = [
             (point[0] + self.offset_width,
              point[1] + self.offset_height) for point in trail_points]
-        # self.trail_points = trail_points
-    
+
     def set_path_points(self, path_points):
         self.path_points = [
             (point[0] + self.offset_width,
