@@ -27,7 +27,7 @@ def get_closest_as_index(arr, target):
     else:
         return mid + 1 if target - arr[mid] >= arr[mid + 1] - target else mid
 
-def ms_to_time(self, ms):
+def ms_to_time(ms):
     string = ""
     if ms < 0:
         ms = -ms
