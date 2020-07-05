@@ -3,6 +3,7 @@ from utils.beatmap import Beatmap
 from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox
 import time
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
+from pygame.constants import *
 
 
 class Analyzer:
@@ -200,6 +201,10 @@ class Analyzer:
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
         debuglog = DebugBox(gui_width - 125, 10, 120, 200)
+        instructions_box = DebugBox(gui_width - 125, 220, 120, 70)
+        instructions_box.add_text("SPACE - play/pause")
+        instructions_box.add_text("RIGHT ARW - next frame")
+        instructions_box.add_text("LEFT ARW - prev frame")
         f = open("out.txt", "w")
         while True:
             osu.set_current_frame(self.current_frame)
@@ -210,6 +215,13 @@ class Analyzer:
                 f"Hit Object index: {self.current_hitobject_index}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
             button_pause.set_text("Pause" if self.running else "Play")
+
+            if GUI.is_single_press_key[K_SPACE]:
+                self.switch_running()
+            if GUI.is_holding_down_key[K_RIGHT]:
+                self.go_to_next_frame()
+            if GUI.is_holding_down_key[K_LEFT]:
+                self.go_to_prev_frame()
 
             gui.draw()
 
