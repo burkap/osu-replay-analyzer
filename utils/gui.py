@@ -1,7 +1,7 @@
 import sys
 import pygame
 from pygame import gfxdraw
-from utils.mathhelper import clamp
+from utils.mathhelper import clamp, is_inside_radius
 from utils.curves import Bezier
 
 
@@ -60,12 +60,23 @@ class GUI:
         pygame.display.flip()
 
 
-class Hitcircle(GUI):
-    def __init__(self, x, y, radius=50, color=(255, 0, 0)):
+class OSU(GUI):
+    def __init__(self, current_frame, is_hardrock=False):
+        OSU.current_frame = current_frame
+        OSU.is_hardrock = is_hardrock
+
+    def set_current_frame(self, current_frame):
+        OSU.current_frame = current_frame
+
+
+class Hitcircle(OSU):
+    def __init__(self, x, y, time, radius=50, color=(255, 0, 0)):
         self.x = int(x)
         self.y = int(y)
         self.radius = int(radius)
+        self.time = time
         self.color = color
+
         GUI.hitcircles.append(self)
 
     def set_position(self, x, y):
@@ -79,10 +90,36 @@ class Hitcircle(GUI):
         GUI.hitcircles.remove(self)
         del self
 
+    def set_time(self, i):
+        self.time = i
+
+    def set_current_time(self, i):
+        self.current_time = i
+
     def display(self):
+        if not (0 < (self.time - OSU.current_frame.time) < 450):
+            return
         osu_width, osu_height = (512, 384)
         play_area_width, play_area_height = GUI.play_area.get_size()
-        offset_width, offset_height = ((play_area_width - osu_width) // 2, (play_area_height - osu_height) // 2)
+        offset_width, offset_height = (
+            (play_area_width - osu_width) // 2, (play_area_height - osu_height) // 2)
+        if is_inside_radius(
+                (OSU.current_frame.x, OSU.current_frame.y), (self.x, 384 - self.y if OSU.is_hardrock else self.y), self.radius):
+            self.set_color((0, 255, 0))
+        else:
+            self.set_color((255, 0, 0))
+
+        # Approach circle
+        for i in range(2):  # <---- line width
+            gfxdraw.aacircle(
+                GUI.play_area,
+                self.x + offset_width,
+                self.y + offset_height,
+                self.radius + i +
+                int(min((self.time - OSU.current_frame.time) / 5, 90)),
+                (255, 255, 255))
+
+        # Hit Circle
         gfxdraw.aacircle(
             GUI.play_area,
             self.x + offset_width,
@@ -93,34 +130,39 @@ class Hitcircle(GUI):
                               self.radius, self.color)
 
 
-class Hitobject_Slider(GUI):
-    def __init__(self, control_points, circle_radius,
+class Hitobject_Slider(OSU):
+    def __init__(self, control_points, circle_radius, time, duration,
                  show_control_points=False, color=(255, 0, 0)):
         self.control_points = control_points
         self.bezier = Bezier(control_points)
         self.circle_radius = circle_radius
         self.color = color
+        self.time = time
+        self.duration = duration
         self.show_control_points = show_control_points
         GUI.hitcircles.append(self)
         self.n = 0
-        self.is_visible = True
 
     def set_control_points(self, control_points):
         self.bezier = Bezier(control_points)
 
-    def set_visibility(self, b):
-        self.is_visible = b
-
     def display(self):
-        if not self.is_visible:
+        if not (0 - self.duration < (self.time - OSU.current_frame.time) < 450):
             return
+
+        play_area_width, play_area_height = GUI.play_area.get_size()
+        # offset between play area and GUI surface
+        self.offset_width = (play_area_width - 512) // 2
+        # offset between play area and GUI surface
+        self.offset_height = (play_area_height - 384) // 2
+
         for i in [self.bezier.pos[0], self.bezier.pos[len(
                 self.bezier.pos) // 2], self.bezier.pos[-1]]:
             a = i
             gfxdraw.aacircle(
                 GUI.play_area,
-                int(a.x),
-                int(a.y),
+                int(a.x) + self.offset_width,
+                int(a.y) + self.offset_height,
                 int(self.circle_radius),
                 (0, 0, 255))
         l1 = []
@@ -131,8 +173,18 @@ class Hitobject_Slider(GUI):
             slope = diffy / diffx
             b = pow(pow(self.circle_radius, 2) / (pow(slope, 2) + 1), 0.5)
             a = -slope * b
-            l1.append((self.bezier.pos[i].x + a, self.bezier.pos[i].y + b))
-            l2.append((self.bezier.pos[i].x - a, self.bezier.pos[i].y - b))
+            l1.append(
+                (self.bezier.pos[i].x +
+                 a +
+                 self.offset_width,
+                 self.bezier.pos[i].y +
+                 b + self.offset_height))
+            l2.append(
+                (self.bezier.pos[i].x -
+                 a +
+                 self.offset_width,
+                 self.bezier.pos[i].y -
+                 b + self.offset_height))
 
         pygame.draw.aalines(
             GUI.play_area,
@@ -142,7 +194,7 @@ class Hitobject_Slider(GUI):
             3)
 
         pygame.draw.aalines(GUI.play_area, pygame.Color("gray"), False, [
-            (i.x, i.y) for i in self.bezier.pos], 3)
+            (i.x + self.offset_width, i.y + self.offset_height) for i in self.bezier.pos], 3)
 
         pygame.draw.aalines(
             GUI.play_area,
@@ -163,8 +215,10 @@ class Cursor(GUI):
         self.trail_points = trail_points
 
         play_area_width, play_area_height = GUI.play_area.get_size()
-        self.offset_width = (play_area_width - 512) // 2  # offset between play area and GUI surface
-        self.offset_height = (play_area_height - 384) // 2  # offset between play area and GUI surface
+        # offset between play area and GUI surface
+        self.offset_width = (play_area_width - 512) // 2
+        # offset between play area and GUI surface
+        self.offset_height = (play_area_height - 384) // 2
 
         GUI.cursor = self
 
@@ -173,7 +227,9 @@ class Cursor(GUI):
         self.y = int(y)
 
     def set_trail_points(self, trail_points):
-        self.trail_points = [(point[0] + self.offset_width, point[1] + self.offset_height) for point in trail_points]
+        self.trail_points = [
+            (point[0] + self.offset_width,
+             point[1] + self.offset_height) for point in trail_points]
         #self.trail_points = trail_points
 
     def display(self):
@@ -201,7 +257,8 @@ class Button(GUI):
         self.text = text
 
     def display(self):
-        if (self.x + self.width > GUI.mouse[0] > self.x and self.y + self.height > GUI.mouse[1] > self.y):
+        if (self.x + self.width >
+                GUI.mouse[0] > self.x and self.y + self.height > GUI.mouse[1] > self.y):
             pygame.draw.rect(GUI.screen, (220, 220, 220),
                              (self.x, self.y, self.width, self.height))
             if GUI.is_single_click and self.on_click is not None:
@@ -244,7 +301,7 @@ class Slider(GUI):
 
     def display(self):
         circle_origin_x = self.x + \
-                          int(self.width * (self.value / self.max_value))
+            int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -260,7 +317,7 @@ class Slider(GUI):
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                         self.max_value / self.width
+                self.max_value / self.width
         else:
             self.is_dragging = False
 

@@ -1,8 +1,8 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider
 import time
-from utils.mathhelper import clamp, get_closest_as_index
+from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2
 
 
 class Analyzer:
@@ -118,11 +118,6 @@ class Analyzer:
         self.prev_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index - 1]
         self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
 
-    def check_if_hit(self, frame, hitobject):
-        diff = pow(frame.x - hitobject.x, 2) + \
-               pow(frame.y - (384 - hitobject.y), 2)
-        return (pow(diff, 0.5) < self.circle_radius)
-
     def get_ms_delay(self, frame, hitobject):
         diff = hitobject.time - frame.time
         # print(diff)
@@ -148,10 +143,25 @@ class Analyzer:
         start_time = time.time()
         play_area_width, play_area_height = (800, 600)
         padding_width, padding_height = (130, 60)
-        gui_width, gui_height = (play_area_width+padding_width*2, play_area_height+padding_height*2)
-        gui = GUI(play_area_width, play_area_height, padding_width, padding_height)
+        gui_width, gui_height = (
+            play_area_width + padding_width * 2, play_area_height + padding_height * 2)
+        gui = GUI(
+            play_area_width,
+            play_area_height,
+            padding_width,
+            padding_height)
 
-        hc = Hitcircle(0, 0, self.circle_radius)
+        osu = OSU(self.current_frame, (self.play_parser.mods & 16))
+        hc = []
+        sliders = []
+        for h in self.beatmap_parser.hitobjects:
+            hc.append(Hitcircle(
+                h.x,
+                384 - h.y if osu.is_hardrock else i.y,
+                h.time,
+                self.circle_radius))
+            if h.type & 2:
+                sliders.append(Hitobject_Slider([Vec2(i.x, 384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],self.circle_radius, h.time, h.duration))
         cursor = Cursor((0, 0))
         button_pause = Button(
             30,
@@ -165,12 +175,13 @@ class Analyzer:
         button_nm = Button(30, 150, 50, 30, "NM", self.switch_speed_to_nm)
         button_ht = Button(30, 200, 50, 30, "HT", self.switch_speed_to_ht)
 
-        slider = Slider(padding_width + 35, gui_height-50, gui_width - padding_width*2 - 70, 5, self.current_frame.time,
+        slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5, self.current_frame.time,
                         self.play_parser.frames[-1].time)
 
         debuglog = DebugBox(gui_width - 125, 10, 120, 200)
         f = open("out.txt", "w")
         while True:
+            osu.set_current_frame(self.current_frame)
             debuglog.clear()
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(
@@ -178,24 +189,13 @@ class Analyzer:
             debuglog.add_text(f"Speed: x{self.anim_speed}")
             button_pause.set_text("Pause" if self.running else "Play")
 
-            if self.play_parser.mods & 16:  # if hardrock
-                hc.set_position(self.current_hitobject.x,
-                                384 - self.current_hitobject.y)
-            else:
-                hc.set_position(self.current_hitobject.x,
-                                self.current_hitobject.y)
-
-            if self.check_if_hit(self.current_frame, self.current_hitobject):
-                hc.set_color((0, 255, 0))
-            else:
-                hc.set_color((255, 0, 0))
             gui.draw()
 
             end_time = time.time()
             next_frame = self.get_relative_frame(1)
             delay = end_time - start_time
             time_difference = (
-                                      next_frame.time - self.current_frame.time) * 0.001
+                next_frame.time - self.current_frame.time) * 0.001
             wait_for = max(0.0001, time_difference - delay) / self.anim_speed
 
             time.sleep(wait_for)
@@ -209,6 +209,7 @@ class Analyzer:
             else:
                 slider.set_value(
                     self.play_parser.frames[self.current_frame_index].time)
+
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
             cursor.set_trail_points(
@@ -221,8 +222,10 @@ class Analyzer:
                 if self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
                     pass
                 if not self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
-                    self.current_frame_hit = self.check_if_hit(
-                        self.current_frame, self.current_hitobject)
+                    self.current_frame_hit = is_inside_radius(
+                        (self.current_frame.x, self.current_frame.y),
+                        (self.current_hitobject.x, self.current_hitobject.y),
+                        self.circle_radius)
                     if self.current_frame_hit:
                         self.get_ms_delay(self.current_frame,
                                           self.current_hitobject)
