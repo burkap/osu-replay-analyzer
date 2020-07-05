@@ -27,6 +27,15 @@ def get_closest_as_index(arr, target):
     else:
         return mid + 1 if target - arr[mid] >= arr[mid + 1] - target else mid
 
+def ms_to_time(self, ms):
+    string = ""
+    if ms < 0:
+        ms = -ms
+        string += "-"
+    string += str(int((ms / (1000 * 60)) % 60))
+    string += ":"
+    string += str(int((ms / 1000) % 60))
+    return string
 
 def is_inside_radius(point, origin, radius):
     """
