@@ -395,15 +395,17 @@ class Slider(GUI):
                         self.max_value / self.width
                     self.is_dragging_ball = True
 
+        ball_size = 8 if self.is_dragging_ball else 7
+
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, 7, (0, 255, 255))
+                         circle_origin_y, ball_size, (0, 255, 255))
         gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                              circle_origin_y, 7, (0, 255, 255))
+                              circle_origin_y, ball_size, (0, 255, 255))
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, 5, (0, 0, 0))
+                         circle_origin_y, ball_size-2, (0, 0, 0))
         if self.is_dragging_ball:
             gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                                  circle_origin_y, 5, (0, 0, 0))
+                                  circle_origin_y, ball_size-2, (0, 0, 0))
 
 
 class TextBox(GUI):
