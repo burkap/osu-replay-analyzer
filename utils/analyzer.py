@@ -267,9 +267,6 @@ class Analyzer:
             cursor.set_path_points(
                 self.get_upcoming_frames(self.trail_length * 2 // 3))
 
-            print("Current frame: {} | Next hitobject: {} | Previous hitobject: {}".format(
-                self.current_frame.time, self.current_hitobject.time, self.prev_hitobject.time), file=f)
-
             if self.running:
                 if self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
                     pass
