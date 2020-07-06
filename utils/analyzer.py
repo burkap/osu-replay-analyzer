@@ -203,8 +203,11 @@ class Analyzer:
         debuglog = DebugBox(gui_width - 125, 10, 120, 200)
         instructions_box = DebugBox(gui_width - 125, 220, 120, 70)
         instructions_box.add_text("SPACE - play/pause")
-        instructions_box.add_text("RIGHT ARW - next frame")
-        instructions_box.add_text("LEFT ARW - prev frame")
+        instructions_box.add_text("X - toggle markers ")
+        instructions_box.add_text("RIGHT - next frame")
+        instructions_box.add_text("LEFT - prev frame")
+        instructions_box.add_text("CTRL to skip frames faster")
+
         f = open("out.txt", "w")
         while True:
             osu.set_current_frame(self.current_frame)
@@ -218,9 +221,21 @@ class Analyzer:
 
             if GUI.is_single_press_key[K_SPACE]:
                 self.switch_running()
-            if GUI.is_holding_down_key[K_RIGHT]:
+            if GUI.is_single_press_key[K_RIGHT]:
                 self.go_to_next_frame()
-            if GUI.is_holding_down_key[K_LEFT]:
+            if GUI.is_single_press_key[K_LEFT]:
+                self.go_to_prev_frame()
+
+            if GUI.is_single_press_key[K_x]:
+                cursor.toggle_show_markers()
+
+            if GUI.is_holding_down_key[K_RIGHT] and GUI.is_holding_down_key[K_LCTRL]:
+                self.go_to_next_frame()
+                self.go_to_next_frame()
+            if GUI.is_holding_down_key[K_LEFT] and GUI.is_holding_down_key[K_LCTRL]:
+                # 1 more than ^this^ because there's one next_frame() at the end of loop
+                self.go_to_prev_frame()
+                self.go_to_prev_frame()
                 self.go_to_prev_frame()
 
             gui.draw()
