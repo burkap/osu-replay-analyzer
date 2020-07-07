@@ -4,6 +4,7 @@ from utils.leb128 import Uleb128
 from lzma import decompress as lzma_decompress
 from utils.frame import Frame
 
+
 class ReplayParser:
 
     def __init__(self, replay_file: Union[str, BytesIO]):
@@ -46,8 +47,8 @@ class ReplayParser:
         return string
 
     def get_keys_from_bits(self, num: int):
-        return [i for i in [1,2,4,8,16] if i & num]
-        
+        return [i for i in [1, 2, 4, 8, 16] if i & num]
+
     def get_frames(self):
         readable_data = lzma_decompress(self.data)
         replay_frames = readable_data.decode("utf-8").split(",")
@@ -59,7 +60,8 @@ class ReplayParser:
         times = []
         for frame in replay_frames:
             time += int(frame[0])
-            absolute_frames.append(Frame(time, int(frame[0]), float(frame[1]), float(frame[2]), self.get_keys_from_bits(int(frame[3]))))
+            absolute_frames.append(
+                Frame(time, int(frame[0]), float(frame[1]), float(frame[2]), self.get_keys_from_bits(int(frame[3]))))
             times.append(time)
 
         return absolute_frames, times
