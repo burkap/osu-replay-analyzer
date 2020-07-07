@@ -285,18 +285,19 @@ class Cursor(GUI):
             for i in self.trail_points:
                 a = 3
                 pygame.draw.line(GUI.play_area, (255, 255, 0),
-                                (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
+                                 (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
 
                 pygame.draw.line(GUI.play_area, (255, 255, 0),
-                                (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
+                                 (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
 
             for i in self.path_points:
                 a = 3
                 pygame.draw.line(GUI.play_area, (255, 255, 255),
-                                (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
+                                 (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
 
                 pygame.draw.line(GUI.play_area, (255, 255, 255),
-                                (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
+                                 (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
+
 
 class Button(GUI):
     def __init__(self, x, y, width, height, text, on_click=0):
