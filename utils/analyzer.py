@@ -148,10 +148,10 @@ class Analyzer:
             # hit 300
             self.count300 += 1
 
-    def analyze_for_relax(self):
+    def run(self):
         """
-            draw_plot:      bool-- ...
-            show_outside:   bool-- ...
+            # to-do:
+            # draw_gui:      bool-- ...
         """
         start_time = time.time()
         play_area_width, play_area_height = (800, 600)
