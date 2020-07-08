@@ -1,5 +1,7 @@
 import sys
 import pygame
+import numpy as np
+
 from pygame import gfxdraw
 from utils.mathhelper import clamp, is_inside_radius
 from utils.curves import Bezier
@@ -22,6 +24,7 @@ class GUI:
         GUI.hitcircles = []
         GUI.elements = []
         GUI.cursor = Cursor((0, 0))
+        GUI.cursor_trail = CursorTrail()
 
         GUI.is_holding_down_key = [0] * len(GUI.keys)
         GUI.is_single_press_key = [0] * len(GUI.keys)
@@ -95,6 +98,7 @@ class GUI:
         for i in GUI.hitcircles:
             i.display()
 
+        GUI.cursor_trail.display()
         GUI.cursor.display()
 
         GUI.screen.blit(GUI.play_area, (self.offset_x, self.offset_y))
@@ -262,15 +266,92 @@ class Hitobject_Slider(OSU):
                                    (i.x, i.y), 5, 1)
 
 
+class CursorTrail(GUI):
+
+    def __init__(self, trail_points: dict = {},
+                 path_points: dict = {},
+                 show_markers=True):
+        self.trailing_points = trail_points
+        self.leading_points = path_points
+        self.show_markers = show_markers
+        self.show_path = True
+
+        play_area_width, play_area_height = GUI.play_area.get_size()
+        # offset between play area and GUI surface
+        self.offset_width = (play_area_width - 512) // 2
+        # offset between play area and GUI surface
+        self.offset_height = (play_area_height - 384) // 2
+
+        GUI.cursor_trail = self
+
+    def toggle_show_markers(self):
+        self.show_markers = not self.show_markers
+
+    def toggle_show_path(self):
+        self.show_path = not self.show_path
+
+    def set_trailing_points(self, trailing_frames):
+        self.trailing_points = [{"pos": [frame.x + self.offset_width,
+                                         frame.y + self.offset_height],
+                                 "keys": [frame.m1_pressed,
+                                          frame.m2_pressed,
+                                          frame.k1_pressed,
+                                          frame.k2_pressed,
+                                          frame.smoke_pressed]} for frame in trailing_frames]
+
+    def set_leading_points(self, leading_points):
+        self.leading_points = [{"pos": [frame.x + self.offset_width,
+                                        frame.y + self.offset_height],
+                                "keys": [frame.m1_pressed,
+                                         frame.m2_pressed,
+                                         frame.k1_pressed,
+                                         frame.k2_pressed,
+                                         frame.smoke_pressed]} for frame in leading_points]
+
+    def get_key_color(self, keys):
+        color = [216, 216, 216]
+
+        if keys[2]:
+            color[1] = 0
+        if keys[3]:
+            color[2] = 0
+
+        return color
+
+    def display(self):
+        if len(self.trailing_points) > 1:
+            for frame1, frame2 in zip(self.trailing_points[:-1], self.trailing_points[1:]):
+                color = self.get_key_color(frame1["keys"])
+                start_pos = frame1["pos"]
+                end_pos = frame2["pos"]
+                pygame.draw.aaline(GUI.play_area, color, start_pos, end_pos)
+        if len(self.leading_points) > 1 and self.show_path:
+            for frame1, frame2 in zip(self.leading_points[:-1], self.leading_points[1:]):
+                color = self.get_key_color(frame1["keys"])
+                start_pos = frame1["pos"]
+                end_pos = frame2["pos"]
+                pygame.draw.aaline(GUI.play_area, color, start_pos, end_pos)
+
+        if self.show_markers:
+            a = 3
+            for frame_point in self.trailing_points:
+                x, y = frame_point["pos"]
+                pygame.draw.line(GUI.play_area, (255, 255, 0),
+                                 (x + a, y + a), (x - a, y - a))
+                pygame.draw.line(GUI.play_area, (255, 255, 0),
+                                 (x - a, y + a), (x + a, y - a))
+            for frame_point in self.leading_points:
+                x, y = frame_point["pos"]
+                pygame.draw.line(GUI.play_area, (255, 255, 255),
+                                 (x + a, y + a), (x - a, y - a))
+                pygame.draw.line(GUI.play_area, (255, 255, 255),
+                                 (x - a, y + a), (x + a, y - a))
+
+
 class Cursor(GUI):
-    def __init__(self, position: tuple, trail_points: list = [],
-                 path_points: list = [], show_path=False, show_markers=True):
+    def __init__(self, position: tuple):
         self.x = int(position[0])
         self.y = int(position[1])
-        self.trail_points = trail_points
-        self.path_points = path_points
-        self.show_path = show_path
-        self.show_markers = show_markers
 
         play_area_width, play_area_height = GUI.play_area.get_size()
         # offset between play area and GUI surface
@@ -280,49 +361,13 @@ class Cursor(GUI):
 
         GUI.cursor = self
 
-    def toggle_show_markers(self):
-        self.show_markers = not self.show_markers
-
     def set_cursor_position(self, x, y):
         self.x = int(x)
         self.y = int(y)
 
-    def set_trail_points(self, trail_points):
-        self.trail_points = [
-            (point[0] + self.offset_width,
-             point[1] + self.offset_height) for point in trail_points]
-
-    def set_path_points(self, path_points):
-        self.path_points = [
-            (point[0] + self.offset_width,
-             point[1] + self.offset_height) for point in path_points]
-
     def display(self):
         pygame.draw.circle(GUI.play_area, (0, 255, 255),
                            (self.x + self.offset_width, self.y + self.offset_height), 5, 2)
-        if len(self.trail_points) > 1:
-            pygame.draw.aalines(GUI.play_area, (0, 0, 255),
-                                False, self.trail_points)
-        if len(self.path_points) > 1 and self.show_path:
-            pygame.draw.aalines(GUI.play_area, (255, 0, 255),
-                                False, self.path_points)
-
-        if self.show_markers:
-            for i in self.trail_points:
-                a = 3
-                pygame.draw.line(GUI.play_area, (255, 255, 0),
-                                 (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
-
-                pygame.draw.line(GUI.play_area, (255, 255, 0),
-                                 (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
-
-            for i in self.path_points:
-                a = 3
-                pygame.draw.line(GUI.play_area, (255, 255, 255),
-                                 (i[0] + a, i[1] + a), (i[0] - a, i[1] - a))
-
-                pygame.draw.line(GUI.play_area, (255, 255, 255),
-                                 (i[0] - a, i[1] + a), (i[0] + a, i[1] - a))
 
 
 class Button(GUI):
@@ -394,7 +439,7 @@ class Slider(GUI):
 
     def display(self):
         circle_origin_x = self.x + \
-            int(self.width * (self.value / self.max_value))
+                          int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -410,7 +455,7 @@ class Slider(GUI):
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                self.max_value / self.width
+                         self.max_value / self.width
         else:
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
@@ -419,7 +464,7 @@ class Slider(GUI):
                     circle_origin_x = clamp(
                         circle_origin_x, self.x, self.x + self.width)
                     self.value = (circle_origin_x - self.x) * \
-                        self.max_value / self.width
+                                 self.max_value / self.width
                     self.is_dragging_ball = True
 
         ball_size = 8 if self.is_dragging_ball else 7

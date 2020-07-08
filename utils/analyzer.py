@@ -1,6 +1,6 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox, CursorTrail
 import time
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 from pygame.constants import *
@@ -34,7 +34,7 @@ class Analyzer:
         self.count50 = 0
         self.countmiss = 0
 
-        self.trail_length = 10
+        self.trail_length = 20
         self.anim_speed = 1
         self.running = True
         # set cs
@@ -81,14 +81,14 @@ class Analyzer:
         frames = []
         for i in range(0, n):
             f = self.get_relative_frame(-i)
-            frames.append((f.x, f.y))
+            frames.append(f)
         return frames
 
     def get_upcoming_frames(self, n):
         frames = []
         for i in range(0, n):
             f = self.get_relative_frame(+i)
-            frames.append((f.x, f.y))
+            frames.append(f)
         return frames
 
     def get_relative_frame(self, r_index: int):
@@ -184,7 +184,8 @@ class Analyzer:
                         self.circle_radius,
                         h.time,
                         h.duration))
-        cursor = Cursor((0, 0), show_path=True)
+        cursor = Cursor((0, 0))
+        cursor_trail = CursorTrail()
         button_pause = Button(
             30,
             250,
@@ -215,7 +216,7 @@ class Analyzer:
         gui.add_single_press_event([K_SPACE], self.switch_running)
         gui.add_single_press_event([K_RIGHT], self.go_to_next_frame)
         gui.add_single_press_event([K_LEFT], self.go_to_prev_frame)
-        gui.add_single_press_event([K_x], cursor.toggle_show_markers)
+        gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
 
         def next_frame_2_times(): return [
             self.go_to_next_frame() for i in range(2)]
@@ -260,9 +261,9 @@ class Analyzer:
 
             cursor.set_cursor_position(self.current_frame.x,
                                        self.current_frame.y)
-            cursor.set_trail_points(
+            cursor_trail.set_trailing_points(
                 self.get_trailing_frames(self.trail_length))
-            cursor.set_path_points(
+            cursor_trail.set_leading_points(
                 self.get_upcoming_frames(self.trail_length * 2 // 3))
             #   GUI CODE ENDS HERE
             #######################
