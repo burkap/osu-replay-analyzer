@@ -223,7 +223,7 @@ class Analyzer:
         def prev_frame_3_times(): return [
             self.go_to_prev_frame() for i in range(3)]
         # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
-        gui.add_holding_down_event([K_RIGHT], next_frame_2_times)
+        gui.add_holding_down_event([K_RIGHT, K_LCTRL], next_frame_2_times)
         gui.add_holding_down_event([K_LEFT, K_LCTRL], prev_frame_3_times)
         #
         ########
