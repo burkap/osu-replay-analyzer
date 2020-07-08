@@ -44,7 +44,6 @@ class Analyzer:
         elif self.play_parser.mods & 16:  # hardrock
             cs = min(cs * 1.3, 10)
         self.circle_radius = 54.4 - 4.48 * cs
-        print(f"Circle Radius: {self.circle_radius}")
 
         # set od
         od = self.beatmap_parser.difficulty["OverallDifficulty"]
@@ -58,13 +57,13 @@ class Analyzer:
         self.hit_100 = 280 - (16 * od)
         self.hit_300 = 160 - (12 * od)
         if self.play_parser.mods & 256:  # halftime
-            self.hit_50 = self.hit_100 * 4 / 3
-            self.hit_100 = self.hit_100 * 4 / 3
-            self.hit_300 = self.hit_300 * 4 / 3
+            self.hit_50  *= 4 / 3
+            self.hit_100 *= 4 / 3
+            self.hit_300 *= 4 / 3
         elif self.play_parser.mods & 64:  # doubletime
-            self.hit_50 = self.hit_100 * 2 / 3
-            self.hit_100 = self.hit_100 * 2 / 3
-            self.hit_300 = self.hit_300 * 2 / 3
+            self.hit_50  *= 2 / 3
+            self.hit_100 *= 2 / 3
+            self.hit_300 *= 2 / 3
 
     def switch_running(self):
         self.running = not self.running
@@ -208,11 +207,11 @@ class Analyzer:
         instructions_box.add_text("LEFT - prev frame")
         instructions_box.add_text("CTRL to skip frames faster")
 
-        f = open("out.txt", "w")
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
+            debuglog.add_text(f"Circle Radius: {self.circle_radius}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
@@ -233,7 +232,8 @@ class Analyzer:
                 self.go_to_next_frame()
                 self.go_to_next_frame()
             if GUI.is_holding_down_key[K_LEFT] and GUI.is_holding_down_key[K_LCTRL]:
-                # 1 more than ^this^ because there's one next_frame() at the end of loop
+                # 1 more than ^this^ because there's one next_frame() at the
+                # end of loop
                 self.go_to_prev_frame()
                 self.go_to_prev_frame()
                 self.go_to_prev_frame()
@@ -263,7 +263,6 @@ class Analyzer:
                                        self.current_frame.y)
             cursor.set_trail_points(
                 self.get_trailing_frames(self.trail_length))
-
             cursor.set_path_points(
                 self.get_upcoming_frames(self.trail_length * 2 // 3))
 
