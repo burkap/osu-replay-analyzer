@@ -29,6 +29,9 @@ class GUI:
         GUI.is_holding_down = False
         GUI.is_single_click = False
 
+        GUI.single_press_events = []
+        GUI.holding_down_events = []
+
     def mouse_events(self):
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
@@ -56,9 +59,32 @@ class GUI:
                 GUI.is_single_press_key[i] = False
                 GUI.is_holding_down_key[i] = False
 
+    def handle_key_events(self):
+        for keys, event in GUI.single_press_events:
+            for key in keys:
+                if not GUI.is_single_press_key[key]:
+                    break
+            else:
+                event()
+
+        for keys, event in GUI.holding_down_events:
+            for key in keys:
+                if not GUI.is_holding_down_key[key]:
+                    break
+            else:
+                event()
+
+    def add_single_press_event(self, keys, event):
+        GUI.single_press_events.append((keys, event))
+
+    def add_holding_down_event(self, keys, event):
+        GUI.holding_down_events.append((keys, event))
+
     def draw(self):
         self.mouse_events()
         self.keyboard_events()
+
+        self.handle_key_events()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -403,10 +429,10 @@ class Slider(GUI):
         gfxdraw.filled_circle(GUI.screen, circle_origin_x,
                               circle_origin_y, ball_size, (0, 255, 255))
         gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, ball_size-2, (0, 0, 0))
+                         circle_origin_y, ball_size - 2, (0, 0, 0))
         if self.is_dragging_ball:
             gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                                  circle_origin_y, ball_size-2, (0, 0, 0))
+                                  circle_origin_y, ball_size - 2, (0, 0, 0))
 
 
 class TextBox(GUI):

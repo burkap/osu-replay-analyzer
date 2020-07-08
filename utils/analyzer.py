@@ -57,11 +57,11 @@ class Analyzer:
         self.hit_100 = 280 - (16 * od)
         self.hit_300 = 160 - (12 * od)
         if self.play_parser.mods & 256:  # halftime
-            self.hit_50  *= 4 / 3
+            self.hit_50 *= 4 / 3
             self.hit_100 *= 4 / 3
             self.hit_300 *= 4 / 3
         elif self.play_parser.mods & 64:  # doubletime
-            self.hit_50  *= 2 / 3
+            self.hit_50 *= 2 / 3
             self.hit_100 *= 2 / 3
             self.hit_300 *= 2 / 3
 
@@ -152,6 +152,8 @@ class Analyzer:
             # to-do:
             # draw_gui:      bool-- ...
         """
+        #################
+        # GUI code starts here
         start_time = time.time()
         play_area_width, play_area_height = (800, 600)
         padding_width, padding_height = (130, 60)
@@ -199,6 +201,7 @@ class Analyzer:
                         self.play_parser.frames[-1].time)
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
+
         debuglog = DebugBox(gui_width - 125, 10, 120, 200)
         instructions_box = DebugBox(gui_width - 125, 220, 120, 70)
         instructions_box.add_text("SPACE - play/pause")
@@ -207,6 +210,23 @@ class Analyzer:
         instructions_box.add_text("LEFT - prev frame")
         instructions_box.add_text("CTRL to skip frames faster")
 
+        ##########
+        # Keyboard Events
+        gui.add_single_press_event([K_SPACE], self.switch_running)
+        gui.add_single_press_event([K_RIGHT], self.go_to_next_frame)
+        gui.add_single_press_event([K_LEFT], self.go_to_prev_frame)
+        gui.add_single_press_event([K_x], cursor.toggle_show_markers)
+
+        def next_frame_2_times(): return [
+            self.go_to_next_frame() for i in range(2)]
+
+        def prev_frame_3_times(): return [
+            self.go_to_prev_frame() for i in range(3)]
+        # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
+        gui.add_holding_down_event([K_RIGHT], next_frame_2_times)
+        gui.add_holding_down_event([K_LEFT, K_LCTRL], prev_frame_3_times)
+        #
+        ########
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
@@ -217,27 +237,6 @@ class Analyzer:
                 f"Hit Object index: {self.current_hitobject_index}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
             button_pause.set_text("Pause" if self.running else "Play")
-
-            if GUI.is_single_press_key[K_SPACE]:
-                self.switch_running()
-            if GUI.is_single_press_key[K_RIGHT]:
-                self.go_to_next_frame()
-            if GUI.is_single_press_key[K_LEFT]:
-                self.go_to_prev_frame()
-
-            if GUI.is_single_press_key[K_x]:
-                cursor.toggle_show_markers()
-
-            if GUI.is_holding_down_key[K_RIGHT] and GUI.is_holding_down_key[K_LCTRL]:
-                self.go_to_next_frame()
-                self.go_to_next_frame()
-            if GUI.is_holding_down_key[K_LEFT] and GUI.is_holding_down_key[K_LCTRL]:
-                # 1 more than ^this^ because there's one next_frame() at the
-                # end of loop
-                self.go_to_prev_frame()
-                self.go_to_prev_frame()
-                self.go_to_prev_frame()
-
             gui.draw()
 
             end_time = time.time()
@@ -265,18 +264,10 @@ class Analyzer:
                 self.get_trailing_frames(self.trail_length))
             cursor.set_path_points(
                 self.get_upcoming_frames(self.trail_length * 2 // 3))
+            #   GUI CODE ENDS HERE
+            #######################
 
             if self.running:
-                if self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
-                    pass
-                if not self.prev_frame.k1_pressed and self.current_frame.k1_pressed:
-                    self.current_frame_hit = is_inside_radius(
-                        (self.current_frame.x, self.current_frame.y),
-                        (self.current_hitobject.x, self.current_hitobject.y),
-                        self.circle_radius)
-                    if self.current_frame_hit:
-                        self.get_ms_delay(self.current_frame,
-                                          self.current_hitobject)
                 if self.current_frame.time < self.current_hitobject.time:
                     self.go_to_next_frame()
                 else:
