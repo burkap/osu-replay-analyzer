@@ -132,9 +132,10 @@ class OSU(GUI):
 
 
 class Hitcircle(OSU):
-    def __init__(self, x, y, time, radius=50, color=(255, 0, 0)):
+    def __init__(self, x, y, time, score, radius=50, color=(255, 0, 0)):
         self.x = int(x)
         self.y = int(y)
+        self.score = score
         self.radius = int(radius)
         self.time = time
         self.color = color
@@ -160,19 +161,17 @@ class Hitcircle(OSU):
     def set_time(self, i):
         self.time = i
 
-    def set_current_time(self, i):
-        self.current_time = i
-
     def display(self):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
-
-        if is_inside_radius(
-                (OSU.current_frame.x, OSU.current_frame.y), (self.x, self.y),
-                self.radius):
-            self.set_color((0, 255, 0))
-        else:
-            self.set_color((255, 0, 0))
+        if self.score[3] == 300:
+            self.set_color((150,185,150))
+        elif self.score[3] == 100:
+            self.set_color((70,70,255))
+        elif self.score[3] == 50:
+            self.set_color((255,255, 70))
+        elif self.score[3] == 0:
+            self.set_color((255, 70, 70))
 
         # Approach circle
         for i in range(2):  # <---- line width
@@ -192,7 +191,9 @@ class Hitcircle(OSU):
             self.radius,
             self.color)
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
-                              self.radius, self.color)
+                              self.radius, (255, 255, 255))
+        gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
+                              self.radius-4, self.color)
         gfxdraw.aacircle(
             GUI.play_area,
             self.x + self.offset_width,

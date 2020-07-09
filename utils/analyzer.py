@@ -58,8 +58,6 @@ class Analyzer:
         self.hit_100 = (280 - (16 * od))/2
         self.hit_300 = (160 - (12 * od))/2
 
-
-
     def switch_running(self):
         self.running = not self.running
 
@@ -129,55 +127,65 @@ class Analyzer:
         diff = frame.time - hitobject.time
         return diff
 
+    def get_score(self, diff, is_slider):
+        if is_slider:
+            if diff >= self.hit_50:
+                return 0
+            else:
+                return 300
+        else:
+            if diff >= self.hit_50:
+                return 0
+            elif diff >= self.hit_100:
+                return 50
+            elif diff >= self.hit_300:
+                return 100
+            else:
+                return 300
+
     def run(self):
         """
             # to-do:
             # draw_gui:      bool-- ...
         """
-        ###################################
-        # Running over whole play for once
-        aas = []
-        while self.current_hitobject.time != self.beatmap_parser.hitobjects[-1].time:
+        ######################################-------------|score is integer value 300, 100, 50, or 0 if miss
+        # Running over whole play for once                 v
+        scores = []  # this gets (frame, hitobject, diff, score)
+        while True:
             current_pos_frame = (self.current_frame.x, self.current_frame.y)
             current_pos_hitobject = (self.current_hitobject.x, 384 -
-                                                               self.current_hitobject.y if (
-                        self.play_parser.mods & 16) else self.current_hitobject.y)
+                                     self.current_hitobject.y if (
+                                         self.play_parser.mods & 16) else self.current_hitobject.y)
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
-                aa = self.get_ms_delay(
+                diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
                 if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
                         (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
-                    if -self.hit_50 < aa < self.hit_50:
-                        aas.append((self.current_frame.time, aa,
-                                    self.current_hitobject.type & 2))
+                    if -self.hit_50 < diff_ms < self.hit_50:
+                        scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
                         self.go_to_next_hitobject()
 
             if self.current_frame.time < self.current_hitobject.time + self.hit_50:
                 self.go_to_next_frame()
             else:
+                diff_ms = self.get_ms_delay(
+                    self.current_frame, self.current_hitobject)
+                scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
                 self.go_to_next_frame()
                 self.go_to_next_hitobject()
+            if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
+                break
 
-        for _, diff, is_slider in aas:
-            diff = abs(diff)
-            if is_slider:
-                if diff >= self.hit_50:
-                    self.countmiss += 1
-                else:
-                    self.count300 += 1
-            else:
-                if diff >= self.hit_50:
-                    # miss
-                    self.countmiss += 1
-                elif diff >= self.hit_100:
-                    # hit 50
-                    self.count50 += 1
-                elif diff >= self.hit_300:
-                    # hit 100
-                    self.count100 += 1
-                else:
-                    # hit 300
-                    self.count300 += 1
+        for a,b,c,score in scores:
+            if score == 300:
+                self.count300 += 1
+            elif score == 100:
+                self.count100 += 1
+            elif score == 50:
+                self.count50 += 1
+            elif score == 0:
+                self.countmiss += 1
+
         #
         #######
         # GUI code starts here
@@ -224,8 +232,10 @@ class Analyzer:
             "Pause",
             self.switch_running)
 
-        key1_rectangle = KeyRectangle(play_area_width + padding_width * 2 - 70, 315, 50)
-        key2_rectangle = KeyRectangle(play_area_width + padding_width * 2 - 70, 370, 50)
+        key1_rectangle = KeyRectangle(
+            play_area_width + padding_width * 2 - 70, 315, 50)
+        key2_rectangle = KeyRectangle(
+            play_area_width + padding_width * 2 - 70, 370, 50)
 
         button_dt = Button(30, 100, 50, 30, "DT", self.switch_speed_to_dt)
         button_nm = Button(30, 150, 50, 30, "NM", self.switch_speed_to_nm)
@@ -272,16 +282,15 @@ class Analyzer:
             debuglog.add_text(f"Circle Radius: {self.circle_radius}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
-            debuglog.add_text(f"Cur. Hit Obj. time: {self.current_hitobject.time}")
-            debuglog.add_text(f"Prev. Hit Obj. time: {self.prev_hitobject.time}")
+            debuglog.add_text(
+                f"Cur. Hit Obj. time: {self.current_hitobject.time}")
+            debuglog.add_text(
+                f"Prev. Hit Obj. time: {self.prev_hitobject.time}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
 
-            debuglog.add_text(f"Length of aas: {len(aas)}")
+            debuglog.add_text(f"Count of scores: {len(scores)}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
-            asi = get_closest_as_index(
-                [ztime for ztime, i, j in aas], self.current_frame.time)
-            debuglog.add_text(f"{aas[asi]}")
             debuglog.add_text(f"300: {self.count300} 100: {self.count100}")
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
             button_pause.set_text("Pause" if self.running else "Play")
@@ -291,7 +300,7 @@ class Analyzer:
             next_frame = self.get_relative_frame(1)
             delay = end_time - start_time
             time_difference = (
-                                      next_frame.time - self.current_frame.time) * 0.001
+                next_frame.time - self.current_frame.time) * 0.001
             wait_for = max(0.0001, time_difference - delay) / self.anim_speed
 
             time.sleep(wait_for)
