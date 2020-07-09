@@ -298,18 +298,12 @@ class Analyzer:
         gui.add_holding_down_event([K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
         #
         ########
-        nth_frame = 0
+        gui.set_music_pos(self.current_frame.time)
         while True:
-            if nth_frame == 100:
-                gui.set_music_pos(self.current_frame.time)
-                nth_frame = 0
-            nth_frame += 1
-
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
-            debuglog.add_text(f"nth_frame: {nth_frame}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
             debuglog.add_text(f"Current time:{self.current_ms}")
@@ -363,6 +357,7 @@ class Analyzer:
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
+                gui.set_music_pos(self.current_ms)
             else:
                 slider.set_value(self.current_ms)
 
