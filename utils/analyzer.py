@@ -143,12 +143,7 @@ class Analyzer:
                 return 100
             else:
                 return 300
-
-    def run(self):
-        """
-            # to-do:
-            # draw_gui:      bool-- ...
-        """
+    def get_scores(self):
         ######################################-------------|score is integer value 300, 100, 50, or 0 if miss
         # Running over whole play for once                 v
         scores = []  # this gets (frame, hitobject, diff, score)
@@ -163,7 +158,8 @@ class Analyzer:
                 if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
                         (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
                     if -self.hit_50 < diff_ms < self.hit_50:
-                        scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                        scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(
+                            diff_ms, self.current_hitobject.type & 2)))
                         if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
                             break
                         self.go_to_next_hitobject()
@@ -173,13 +169,14 @@ class Analyzer:
             else:
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
-                scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(
+                    diff_ms, self.current_hitobject.type & 2)))
                 if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
                     break
                 self.go_to_next_frame()
                 self.go_to_next_hitobject()
 
-        for _,_,_,score in scores:
+        for _, _, _, score in scores:
             if score == 300:
                 self.count300 += 1
             elif score == 100:
@@ -188,9 +185,17 @@ class Analyzer:
                 self.count50 += 1
             elif score == 0:
                 self.countmiss += 1
-
+        return scores
         #
         #######
+
+    def run(self):
+        """
+            # to-do:
+            # draw_gui:      bool-- ...
+        """
+        scores = self.get_scores()
+
         # GUI code starts here
         self.set_current_frame(0)
         self.set_current_hitobject(0)
