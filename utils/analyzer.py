@@ -132,20 +132,7 @@ class Analyzer:
 
     def get_ms_delay(self, frame, hitobject):
         diff = hitobject.time - frame.time
-        # print(diff)
-        diff = abs(diff)
-        if diff >= self.hit_50:
-            # miss
-            self.countmiss += 1
-        elif diff >= self.hit_100:
-            # hit 50
-            self.count50 += 1
-        elif diff >= self.hit_300:
-            # hit 100
-            self.count300 += 1
-        else:
-            # hit 300
-            self.count300 += 1
+        return diff
 
     def run(self):
         """
