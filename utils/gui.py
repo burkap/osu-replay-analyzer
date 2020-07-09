@@ -1,39 +1,51 @@
 import sys
 import pygame
-import numpy as np
 
 from pygame import gfxdraw
 from utils.mathhelper import clamp, is_inside_radius
 from utils.curves import Bezier
 
-
 class GUI:
+    cursor = None
+    cursor_trail = None
+
+    screen = None
+    play_area = None
+
+    mouse = None
+    click = None
+    keys = None
+
+    clock = None
+    hitcircles = []
+    elements = []
+
+    is_holding_down_key = None
+    is_single_press_key = None
+
+    is_holding_down = False
+    is_single_click = False
+
+    single_press_events = []
+    holding_down_events = []
+
     def __init__(self, width, height, offset_x=0, offset_y=0):
         pygame.init()
         self.offset_x = offset_x
         self.offset_y = offset_y
         self.size = self.width, self.height = width + 2 * offset_x, height + 2 * offset_y
+
         GUI.screen = pygame.display.set_mode(self.size)
-        GUI.play_area = pygame.Surface((width, height))
+        GUI.play_area = pygame.Surface((self.width, self.height))
 
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
         GUI.keys = pygame.key.get_pressed()
 
         GUI.clock = pygame.time.Clock()
-        GUI.hitcircles = []
-        GUI.elements = []
-        GUI.cursor = Cursor((0, 0))
-        GUI.cursor_trail = CursorTrail()
 
         GUI.is_holding_down_key = [0] * len(GUI.keys)
         GUI.is_single_press_key = [0] * len(GUI.keys)
-
-        GUI.is_holding_down = False
-        GUI.is_single_click = False
-
-        GUI.single_press_events = []
-        GUI.holding_down_events = []
 
     def mouse_events(self):
         GUI.mouse = pygame.mouse.get_pos()
