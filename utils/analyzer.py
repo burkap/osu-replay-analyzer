@@ -311,15 +311,7 @@ class Analyzer:
             button_pause.set_text("Pause" if self.running else "Play")
             gui.draw()
 
-            end_time = time.time()
-            next_frame = self.get_relative_frame(1)
-            delay = end_time - start_time
-            time_difference = (
-                next_frame.time - self.current_frame.time) * 0.001
-            wait_for = max(0.0001, time_difference - delay) / self.anim_speed
-
-            time.sleep(wait_for)
-            start_time = time.time()
+            gui.clock.tick(60)
 
             if self.current_frame.k1_pressed:
                 key1_rectangle.set_key_down()
