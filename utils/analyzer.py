@@ -134,7 +134,6 @@ class Analyzer:
             # to-do:
             # draw_gui:      bool-- ...
         """
-        print(self._hitobjects_count)
         ###################################
         # Running over whole play for once
         aas = []
