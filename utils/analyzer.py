@@ -211,7 +211,7 @@ class Analyzer:
             play_area_height,
             padding_width,
             padding_height)
-
+        gui.play_music()
         osu = OSU(self.current_frame, (self.play_parser.mods & 16))
         hc = []
         sliders = []
@@ -288,11 +288,18 @@ class Analyzer:
         gui.add_holding_down_event([K_LEFT, K_LCTRL], prev_frame_3_times)
         #
         ########
+        nth_frame = 0
         while True:
+            if nth_frame == 10:
+                gui.set_music_pos(self.current_frame.time)
+                nth_frame =0
+            nth_frame += 1
+
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
+            debuglog.add_text(f"nth_frame: {nth_frame}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
             debuglog.add_text(
@@ -301,6 +308,9 @@ class Analyzer:
                 f"Prev. Hit Obj. time: {self.prev_hitobject.time}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
+
+            debuglog.add_text(
+                f"Music pos: {gui.get_music_pos()}")
 
             debuglog.add_text(
                 f"")
@@ -351,8 +361,11 @@ class Analyzer:
             #######################
 
             if self.running:
+                gui.unpause_music()
                 if self.current_frame.time < self.current_hitobject.time:
                     self.go_to_next_frame()
                 else:
                     self.go_to_next_frame()
                     self.go_to_next_hitobject()
+            else:
+                gui.pause_music()
