@@ -1,6 +1,7 @@
 from utils.replay_parser import ReplayParser
 from utils.beatmap import Beatmap
-from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox, CursorTrail
+from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox, CursorTrail, \
+    KeyRectangle
 import time
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 from pygame.constants import *
@@ -148,7 +149,8 @@ class Analyzer:
         while self.current_hitobject.time != self.beatmap_parser.hitobjects[-1].time:
             current_pos_frame = (self.current_frame.x, self.current_frame.y)
             current_pos_hitobject = (self.current_hitobject.x, 384 -
-                                     self.current_hitobject.y if (self.play_parser.mods & 16) else self.current_hitobject.y)
+                                                               self.current_hitobject.y if (
+                        self.play_parser.mods & 16) else self.current_hitobject.y)
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
                 aa = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
@@ -231,11 +233,15 @@ class Analyzer:
             "Pause",
             self.switch_running)
 
+        key1_rectangle = KeyRectangle(play_area_width + padding_width * 2 - 70, 315, 50)
+        key2_rectangle = KeyRectangle(play_area_width + padding_width * 2 - 70, 370, 50)
+
         button_dt = Button(30, 100, 50, 30, "DT", self.switch_speed_to_dt)
         button_nm = Button(30, 150, 50, 30, "NM", self.switch_speed_to_nm)
         button_ht = Button(30, 200, 50, 30, "HT", self.switch_speed_to_ht)
 
-        slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5, self.current_frame.time,
+        slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5,
+                        self.current_frame.time,
                         self.play_parser.frames[-1].time)
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
@@ -255,11 +261,14 @@ class Analyzer:
         gui.add_single_press_event([K_LEFT], self.go_to_prev_frame)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
 
-        def next_frame_2_times(): return [
-            self.go_to_next_frame() for i in range(2)]
+        def next_frame_2_times():
+            return [
+                self.go_to_next_frame() for i in range(2)]
 
-        def prev_frame_3_times(): return [
-            self.go_to_prev_frame() for i in range(3)]
+        def prev_frame_3_times():
+            return [
+                self.go_to_prev_frame() for i in range(3)]
+
         # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
         gui.add_holding_down_event([K_RIGHT, K_LCTRL], next_frame_2_times)
         gui.add_holding_down_event([K_LEFT, K_LCTRL], prev_frame_3_times)
@@ -271,6 +280,9 @@ class Analyzer:
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {self.circle_radius}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
+            debuglog.add_text(f"Frame time:{self.current_frame.time}")
+            debuglog.add_text(f"Cur. Hit Obj. time: {self.current_hitobject.time}")
+            debuglog.add_text(f"Prev. Hit Obj. time: {self.prev_hitobject.time}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
 
@@ -288,11 +300,21 @@ class Analyzer:
             next_frame = self.get_relative_frame(1)
             delay = end_time - start_time
             time_difference = (
-                next_frame.time - self.current_frame.time) * 0.001
+                                      next_frame.time - self.current_frame.time) * 0.001
             wait_for = max(0.0001, time_difference - delay) / self.anim_speed
 
             time.sleep(wait_for)
             start_time = time.time()
+
+            if self.current_frame.k1_pressed:
+                key1_rectangle.set_key_down()
+            else:
+                key1_rectangle.set_key_up()
+
+            if self.current_frame.k2_pressed:
+                key2_rectangle.set_key_down()
+            else:
+                key2_rectangle.set_key_up()
 
             if slider.is_dragging_ball:
                 self.set_current_frame(get_closest_as_index(

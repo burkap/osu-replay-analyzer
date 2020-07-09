@@ -5,6 +5,7 @@ from pygame import gfxdraw
 from utils.mathhelper import clamp, is_inside_radius
 from utils.curves import Bezier
 
+
 class GUI:
     cursor = None
     cursor_trail = None
@@ -36,7 +37,7 @@ class GUI:
         self.size = self.width, self.height = width + 2 * offset_x, height + 2 * offset_y
 
         GUI.screen = pygame.display.set_mode(self.size)
-        GUI.play_area = pygame.Surface((self.width, self.height))
+        GUI.play_area = pygame.Surface((width, height))
 
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
@@ -518,6 +519,32 @@ class TextBox(GUI):
         GUI.screen.blit(label, rect)
 
 
+class KeyRectangle(GUI):
+    def __init__(self, x, y, size):
+        self.x = x
+        self.y = y
+        self.size = size
+
+        self.key_down = False
+
+        GUI.elements.append(self)
+
+    def set_key_down(self):
+        self.key_down = True
+
+    def set_key_up(self):
+        self.key_down = False
+
+    def display(self):
+        if self.key_down:
+            color = (255, 211, 0)
+        else:
+            color = (40, 40, 40)
+
+        pygame.draw.rect(GUI.screen, color,
+                         (self.x, self.y, self.size, self.size), 0)
+
+
 class DebugBox(GUI):
     def __init__(self, x, y, width, height):
         self.x = x
@@ -545,7 +572,7 @@ class DebugBox(GUI):
             tmp_label = self.font.render(text, True, (255, 255, 255))
             tmp_rect = tmp_label.get_rect()
             tmp_rect.center = ((self.x + (self.width / 2)),
-                               (self.y) + 10 + (index * self.font_size))
+                               self.y + 10 + (index * self.font_size))
 
             labels.append(tmp_label)
             label_rects.append(tmp_rect)
