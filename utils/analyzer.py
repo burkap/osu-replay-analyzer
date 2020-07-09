@@ -3,7 +3,6 @@ from utils.beatmap import Beatmap
 from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox, CursorTrail, \
     KeyRectangle
 import time
-import numpy as np
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 from pygame.constants import *
 
@@ -24,7 +23,6 @@ class Analyzer:
         self.current_frame_index = 0
         self.current_hitobject_index = 0
 
-        self.current_ms = self.play_parser.frames[0].time
         self.current_frame = self.play_parser.frames[self.current_frame_index]
         self.prev_frame = self.play_parser.frames[self.current_frame_index]
 
@@ -56,9 +54,9 @@ class Analyzer:
             od = min(od * 1.4, 10)
 
         # hit windows
-        self.hit_50 = (400 - (20 * od)) / 2
-        self.hit_100 = (280 - (16 * od)) / 2
-        self.hit_300 = (160 - (12 * od)) / 2
+        self.hit_50 = (400 - (20 * od))/2
+        self.hit_100 = (280 - (16 * od))/2
+        self.hit_300 = (160 - (12 * od))/2
 
     def switch_running(self):
         self.running = not self.running
@@ -91,19 +89,6 @@ class Analyzer:
         abs_frame_index = clamp(abs_frame_index, 0, self._frames_count - 1)
         return self.play_parser.frames[abs_frame_index]
 
-    def go_to_prev_ms(self):
-        self.current_ms = clamp(self.current_ms - 1, 0, self.play_parser.frames[-1].time)
-
-    def go_to_next_ms(self):
-        self.current_ms = clamp(self.current_ms + 1, 0, self.play_parser.frames[-1].time)
-
-    def go_to_next_ms_faster(self):
-        self.current_ms = clamp(self.current_ms + 10, 0, self.play_parser.frames[-1].time)
-
-    def go_to_prev_ms_faster(self):
-        self.current_ms = clamp(self.current_ms - 10, 0, self.play_parser.frames[-1].time)
-
-
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
             self.current_frame_index - 1, 0, self._frames_count - 1)
@@ -115,9 +100,6 @@ class Analyzer:
             self.current_frame_index + 1, 0, self._frames_count - 1)
         self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
-
-    def set_current_ms(self, ms):
-        self.current_ms = ms
 
     def set_current_frame(self, index):
         self.current_frame_index = index
@@ -161,6 +143,7 @@ class Analyzer:
                 return 100
             else:
                 return 300
+
     def get_scores(self):
         ######################################-------------|score is integer value 300, 100, 50, or 0 if miss
         # Running over whole play for once                 v
@@ -272,8 +255,8 @@ class Analyzer:
         button_ht = Button(30, 200, 50, 30, "HT", self.switch_speed_to_ht)
 
         slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5,
-                        self.current_ms,
-                        self.play_parser.frames[-1].time)
+                        self.current_frame.time,
+                        self.play_parser.frames[-1].time, [(i[0].time, i[3]) for i in scores if i[3] != 300])
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
 
@@ -288,20 +271,28 @@ class Analyzer:
         ##########
         # Keyboard Events
         gui.add_single_press_event([K_SPACE], self.switch_running)
-        gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
-        gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
+        gui.add_single_press_event([K_RIGHT], self.go_to_next_frame)
+        gui.add_single_press_event([K_LEFT], self.go_to_prev_frame)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
 
+        def next_frame_2_times():
+            return [
+                self.go_to_next_frame() for i in range(2)]
+
+        def prev_frame_3_times():
+            return [
+                self.go_to_prev_frame() for i in range(3)]
+
         # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
-        gui.add_holding_down_event([K_RIGHT, K_LCTRL], self.go_to_next_ms_faster)
-        gui.add_holding_down_event([K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
+        gui.add_holding_down_event([K_RIGHT, K_LCTRL], next_frame_2_times)
+        gui.add_holding_down_event([K_LEFT, K_LCTRL], prev_frame_3_times)
         #
         ########
         nth_frame = 0
         while True:
             if nth_frame == 10:
                 gui.set_music_pos(self.current_frame.time)
-                nth_frame =0
+                nth_frame = 0
             nth_frame += 1
 
             osu.set_current_frame(self.current_frame)
@@ -311,7 +302,6 @@ class Analyzer:
             debuglog.add_text(f"nth_frame: {nth_frame}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
-            debuglog.add_text(f"Current time:{self.current_ms}")
             debuglog.add_text(
                 f"Cur. Hit Obj. time: {self.current_hitobject.time}")
             debuglog.add_text(
@@ -337,15 +327,10 @@ class Analyzer:
                 f"")
             debuglog.add_text(f"300: {self.count300} 100: {self.count100}")
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
-
-            frame_time_diff = max(1, self.current_frame.time - self.prev_frame.time)
-            to_next_frame_time_ratio = (self.current_ms - self.prev_frame.time) / frame_time_diff
-
-            debuglog.add_text(f"time ratio:{to_next_frame_time_ratio:.2f}")
             button_pause.set_text("Pause" if self.running else "Play")
             gui.draw()
 
-            gui.clock.tick(60 * self.anim_speed)
+            gui.clock.tick(60)
 
             if self.current_frame.k1_pressed:
                 key1_rectangle.set_key_down()
@@ -358,19 +343,16 @@ class Analyzer:
                 key2_rectangle.set_key_up()
 
             if slider.is_dragging_ball:
-                self.set_current_ms(int(slider.get_value()))
                 self.set_current_frame(get_closest_as_index(
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
             else:
-                slider.set_value(self.current_ms)
+                slider.set_value(
+                    self.play_parser.frames[self.current_frame_index].time)
 
-            cursor_x = np.interp(self.current_ms, [self.prev_frame.time, self.current_frame.time],
-                                           [self.prev_frame.x, self.current_frame.x])
-            cursor_y = np.interp(self.current_ms, [self.prev_frame.time, self.current_frame.time],
-                                           [self.prev_frame.y, self.current_frame.y])
-            cursor.set_cursor_position(cursor_x, cursor_y)
+            cursor.set_cursor_position(self.current_frame.x,
+                                       self.current_frame.y)
             cursor_trail.set_trailing_points(
                 self.get_trailing_frames(self.trail_length))
             cursor_trail.set_leading_points(
@@ -378,15 +360,12 @@ class Analyzer:
             #   GUI CODE ENDS HERE
             #######################
 
-            if self.current_ms >= self.current_frame.time:
-                self.go_to_next_frame()
-            elif self.current_ms < self.prev_frame.time:
-                self.go_to_prev_frame()
-            if not self.current_frame.time < self.current_hitobject.time:
-                self.go_to_next_hitobject()
-
             if self.running:
                 gui.unpause_music()
-                self.go_to_next_ms()
+                if self.current_frame.time < self.current_hitobject.time:
+                    self.go_to_next_frame()
+                else:
+                    self.go_to_next_frame()
+                    self.go_to_next_hitobject()
             else:
                 gui.pause_music()

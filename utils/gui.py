@@ -48,6 +48,10 @@ class GUI:
         GUI.is_holding_down_key = [0] * len(GUI.keys)
         GUI.is_single_press_key = [0] * len(GUI.keys)
 
+        pygame.mixer.music.load("data/audio.mp3")
+        self.music_playing = False
+        self.last_music_time = 0
+
     def mouse_events(self):
         GUI.mouse = pygame.mouse.get_pos()
         GUI.click = pygame.mouse.get_pressed()
@@ -95,6 +99,27 @@ class GUI:
 
     def add_holding_down_event(self, keys, event):
         GUI.holding_down_events.append((keys, event))
+
+    def play_music(self):
+        pygame.mixer.music.play()
+        self.music_playing = True
+
+    def pause_music(self):
+        if self.music_playing:
+            pygame.mixer.music.pause()
+            self.music_playing = False
+
+    def unpause_music(self):
+        if not self.music_playing:
+            pygame.mixer.music.unpause()
+            self.music_playing = True
+
+    def get_music_pos(self):
+        return pygame.mixer.music.get_pos() - self.last_music_time
+
+    def set_music_pos(self, x):
+        pygame.mixer.music.set_pos(x/1000)
+        self.last_music_time = pygame.mixer.music.get_pos()
 
     def draw(self):
         self.mouse_events()
@@ -193,7 +218,7 @@ class Hitcircle(OSU):
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, (255, 255, 255))
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
-                              self.radius - 4, self.color)
+                              self.radius-4, self.color)
         gfxdraw.aacircle(
             GUI.play_area,
             self.x + self.offset_width,
