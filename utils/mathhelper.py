@@ -32,9 +32,9 @@ def ms_to_time(ms):
     if ms < 0:
         ms = -ms
         string += "-"
-    string += str(int((ms / (1000 * 60)) % 60))
+    string += f"{int((ms / (1000 * 60)) % 60):02d}"
     string += ":"
-    string += str(int((ms / 1000) % 60))
+    string += f"{(int((ms / 1000) % 60)):02d}"
     return string
 
 def is_inside_radius(point, origin, radius):

@@ -165,11 +165,11 @@ class Hitcircle(OSU):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
         if self.score[3] == 300:
-            self.set_color((150,185,150))
+            self.set_color((150, 185, 150))
         elif self.score[3] == 100:
-            self.set_color((70,70,255))
+            self.set_color((70, 70, 255))
         elif self.score[3] == 50:
-            self.set_color((255,255, 70))
+            self.set_color((255, 255, 70))
         elif self.score[3] == 0:
             self.set_color((255, 70, 70))
 
@@ -193,7 +193,7 @@ class Hitcircle(OSU):
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, (255, 255, 255))
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
-                              self.radius-4, self.color)
+                              self.radius - 4, self.color)
         gfxdraw.aacircle(
             GUI.play_area,
             self.x + self.offset_width,
