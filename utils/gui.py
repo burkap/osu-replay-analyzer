@@ -48,7 +48,10 @@ class GUI:
         GUI.is_holding_down_key = [0] * len(GUI.keys)
         GUI.is_single_press_key = [0] * len(GUI.keys)
 
+
+        pygame.mixer.init()
         pygame.mixer.music.load("data/audio.mp3")
+        pygame.mixer.music.set_volume(0.3)
         self.music_playing = False
         self.last_music_time = 0
 
