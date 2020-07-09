@@ -128,6 +128,7 @@ class Analyzer:
         return diff
 
     def get_score(self, diff, is_slider):
+        diff = abs(diff)
         if is_slider:
             if diff >= self.hit_50:
                 return 0
@@ -175,7 +176,6 @@ class Analyzer:
                 self.go_to_next_hitobject()
             if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
                 break
-
         for a,b,c,score in scores:
             if score == 300:
                 self.count300 += 1
@@ -206,22 +206,26 @@ class Analyzer:
         osu = OSU(self.current_frame, (self.play_parser.mods & 16))
         hc = []
         sliders = []
-        for h in self.beatmap_parser.hitobjects:
-            hc.append(Hitcircle(
-                h.x,
-                384 - h.y if osu.is_hardrock else h.y,
-                h.time,
-                self.circle_radius))
-            if h.type & 2:
-                sliders.append(
-                    Hitobject_Slider(
-                        [
-                            Vec2(
-                                i.x,
-                                384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],
-                        self.circle_radius,
-                        h.time,
-                        h.duration))
+        try:
+            for index,h in enumerate(self.beatmap_parser.hitobjects):
+                hc.append(Hitcircle(
+                    h.x,
+                    384 - h.y if osu.is_hardrock else h.y,
+                    h.time,
+                    scores[index],
+                    self.circle_radius))
+                if h.type & 2:
+                    sliders.append(
+                        Hitobject_Slider(
+                            [
+                                Vec2(
+                                    i.x,
+                                    384 - i.y if osu.is_hardrock else i.y) for i in h.curve_points],
+                            self.circle_radius,
+                            h.time,
+                            h.duration))
+        except:
+            pass #todo
         cursor = Cursor((0, 0))
         cursor_trail = CursorTrail()
         button_pause = Button(
@@ -279,7 +283,7 @@ class Analyzer:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
-            debuglog.add_text(f"Circle Radius: {self.circle_radius}")
+            debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
             debuglog.add_text(
@@ -289,8 +293,19 @@ class Analyzer:
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
 
+            debuglog.add_text(
+                f"")
+            debuglog.add_text(
+                f"       Hit Windows       ")
+            debuglog.add_text(f"{self.hit_300} {self.hit_100} {self.hit_50}")
+
+            debuglog.add_text(
+                f"")
             debuglog.add_text(f"Count of scores: {len(scores)}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
+
+            debuglog.add_text(
+                f"")
             debuglog.add_text(f"300: {self.count300} 100: {self.count100}")
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
             button_pause.set_text("Pause" if self.running else "Play")
