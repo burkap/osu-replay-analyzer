@@ -161,28 +161,23 @@ class Analyzer:
                 return 100
             else:
                 return 300
-
-    def run(self):
-        """
-            # to-do:
-            # draw_gui:      bool-- ...
-        """
+    def get_scores(self):
         ######################################-------------|score is integer value 300, 100, 50, or 0 if miss
         # Running over whole play for once                 v
         scores = []  # this gets (frame, hitobject, diff, score)
         while True:
             current_pos_frame = (self.current_frame.x, self.current_frame.y)
             current_pos_hitobject = (self.current_hitobject.x, 384 -
-                                                               self.current_hitobject.y if (
-                    self.play_parser.mods & 16) else self.current_hitobject.y)
+                                     self.current_hitobject.y if (
+                                         self.play_parser.mods & 16) else self.current_hitobject.y)
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
                 if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
                         (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
                     if -self.hit_50 < diff_ms < self.hit_50:
-                        scores.append((self.current_frame, self.current_hitobject, diff_ms,
-                                       self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                        scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(
+                            diff_ms, self.current_hitobject.type & 2)))
                         if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
                             break
                         self.go_to_next_hitobject()
@@ -192,8 +187,8 @@ class Analyzer:
             else:
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
-                scores.append((self.current_frame, self.current_hitobject, diff_ms,
-                               self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(
+                    diff_ms, self.current_hitobject.type & 2)))
                 if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
                     break
                 self.go_to_next_frame()
@@ -233,7 +228,7 @@ class Analyzer:
             play_area_height,
             padding_width,
             padding_height)
-
+        gui.play_music()
         osu = OSU(self.current_frame, (self.play_parser.mods & 16))
         hc = []
         sliders = []
@@ -302,11 +297,18 @@ class Analyzer:
         gui.add_holding_down_event([K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
         #
         ########
+        nth_frame = 0
         while True:
+            if nth_frame == 10:
+                gui.set_music_pos(self.current_frame.time)
+                nth_frame =0
+            nth_frame += 1
+
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
+            debuglog.add_text(f"nth_frame: {nth_frame}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
             debuglog.add_text(f"Current time:{self.current_ms}")
@@ -316,6 +318,9 @@ class Analyzer:
                 f"Prev. Hit Obj. time: {self.prev_hitobject.time}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
+
+            debuglog.add_text(
+                f"Music pos: {gui.get_music_pos()}")
 
             debuglog.add_text(
                 f"")
@@ -381,5 +386,7 @@ class Analyzer:
                 self.go_to_next_hitobject()
 
             if self.running:
+                gui.unpause_music()
                 self.go_to_next_ms()
-
+            else:
+                gui.pause_music()
