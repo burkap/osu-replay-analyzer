@@ -164,6 +164,8 @@ class Analyzer:
                         (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
                     if -self.hit_50 < diff_ms < self.hit_50:
                         scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                        if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
+                            break
                         self.go_to_next_hitobject()
 
             if self.current_frame.time < self.current_hitobject.time + self.hit_50:
@@ -172,11 +174,12 @@ class Analyzer:
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
                 scores.append((self.current_frame, self.current_hitobject, diff_ms, self.get_score(diff_ms, self.current_hitobject.type & 2)))
+                if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
+                    break
                 self.go_to_next_frame()
                 self.go_to_next_hitobject()
-            if self.current_hitobject.time == self.beatmap_parser.hitobjects[-1].time:
-                break
-        for a,b,c,score in scores:
+
+        for _,_,_,score in scores:
             if score == 300:
                 self.count300 += 1
             elif score == 100:
