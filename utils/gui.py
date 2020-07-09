@@ -165,11 +165,11 @@ class Hitcircle(OSU):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
         if self.score[3] == 300:
-            self.set_color((150,185,150))
+            self.set_color((140, 140, 140))
         elif self.score[3] == 100:
-            self.set_color((70,70,255))
+            self.set_color((70, 255, 70))
         elif self.score[3] == 50:
-            self.set_color((255,255, 70))
+            self.set_color((255, 140, 70))
         elif self.score[3] == 0:
             self.set_color((255, 70, 70))
 
@@ -419,13 +419,14 @@ class Button(GUI):
 
 
 class Slider(GUI):
-    def __init__(self, x, y, width, height, value, max_value):
+    def __init__(self, x, y, width, height, value, max_value, slider_ticks):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.value = value
         self.max_value = max_value
+        self.slider_ticks = slider_ticks
 
         self.drag_origin_x = 0
         self.drag_origin_y = 0
@@ -452,8 +453,23 @@ class Slider(GUI):
             return False
 
     def display(self):
+        for tick, score in self.slider_ticks:
+            tick_origin_x = self.x + \
+                int(self.width * (tick / self.max_value))
+            tick_origin_y = self.y + int(self.height / 2)
+            tick_color = (255, 255, 255)
+            if score == 100:
+                tick_color = (70, 255, 70)
+            elif score == 50:
+                tick_color = (255, 140, 70)
+            elif score == 0:
+                tick_color = (255, 70, 70)
+
+            pygame.draw.rect(GUI.screen, tick_color,
+                             (tick_origin_x, tick_origin_y, 2, self.height*3))
+
         circle_origin_x = self.x + \
-                          int(self.width * (self.value / self.max_value))
+            int(self.width * (self.value / self.max_value))
         circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
@@ -469,7 +485,7 @@ class Slider(GUI):
             circle_origin_x = clamp(
                 circle_origin_x, self.x, self.x + self.width)
             self.value = (circle_origin_x - self.x) * \
-                         self.max_value / self.width
+                self.max_value / self.width
         else:
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
@@ -478,7 +494,7 @@ class Slider(GUI):
                     circle_origin_x = clamp(
                         circle_origin_x, self.x, self.x + self.width)
                     self.value = (circle_origin_x - self.x) * \
-                                 self.max_value / self.width
+                        self.max_value / self.width
                     self.is_dragging_ball = True
 
         ball_size = 8 if self.is_dragging_ball else 7
