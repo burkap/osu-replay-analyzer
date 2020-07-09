@@ -208,9 +208,17 @@ class Analyzer:
                 self.count50 += 1
             elif score == 0:
                 self.countmiss += 1
-
+        return scores
         #
         #######
+
+    def run(self):
+        """
+            # to-do:
+            # draw_gui:      bool-- ...
+        """
+        scores = self.get_scores()
+
         # GUI code starts here
         self.set_current_frame(0)
         self.set_current_hitobject(0)
