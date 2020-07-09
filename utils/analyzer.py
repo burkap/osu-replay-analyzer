@@ -57,7 +57,7 @@ class Analyzer:
         self.hit_50 = 400 - (20 * od)
         self.hit_100 = 280 - (16 * od)
         self.hit_300 = 160 - (12 * od)
-        """
+
         if self.play_parser.mods & 256:  # halftime
             self.hit_50 *= 4 / 3
             self.hit_100 *= 4 / 3
@@ -66,7 +66,7 @@ class Analyzer:
             self.hit_50 *= 2 / 3
             self.hit_100 *= 2 / 3
             self.hit_300 *= 2 / 3
-            """
+
 
     def switch_running(self):
         self.running = not self.running
@@ -142,7 +142,7 @@ class Analyzer:
             # to-do:
             # draw_gui:      bool-- ...
         """
-
+        print(self._hitobjects_count)
         ###################################
         # Running over whole play for once
         aas = []
@@ -154,7 +154,8 @@ class Analyzer:
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
                 aa = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
-                if self.current_frame.k1_pressed or self.current_frame.k2_pressed:
+                if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
+                        (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
                     if -self.hit_50 < aa < self.hit_50:
                         self.go_to_next_hitobject()
                         aas.append((self.current_frame.time, aa,
@@ -189,7 +190,6 @@ class Analyzer:
         #
         #######
         # GUI code starts here
-
         self.set_current_frame(0)
         self.set_current_hitobject(0)
 
