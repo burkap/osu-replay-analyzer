@@ -34,7 +34,7 @@ class Analyzer:
         self.count50 = 0
         self.countmiss = 0
 
-        self.trail_length = 20
+        self.trail_length = 10
         self.anim_speed = 1
         self.running = True
         # set cs
@@ -56,6 +56,7 @@ class Analyzer:
         self.hit_50 = 400 - (20 * od)
         self.hit_100 = 280 - (16 * od)
         self.hit_300 = 160 - (12 * od)
+        """
         if self.play_parser.mods & 256:  # halftime
             self.hit_50 *= 4 / 3
             self.hit_100 *= 4 / 3
@@ -64,6 +65,7 @@ class Analyzer:
             self.hit_50 *= 2 / 3
             self.hit_100 *= 2 / 3
             self.hit_300 *= 2 / 3
+            """
 
     def switch_running(self):
         self.running = not self.running
@@ -131,7 +133,7 @@ class Analyzer:
         self.current_hitobject = self.beatmap_parser.hitobjects[self.current_hitobject_index]
 
     def get_ms_delay(self, frame, hitobject):
-        diff = hitobject.time - frame.time
+        diff = frame.time - hitobject.time
         return diff
 
     def run(self):
@@ -139,8 +141,56 @@ class Analyzer:
             # to-do:
             # draw_gui:      bool-- ...
         """
-        #################
+
+        ###################################
+        # Running over whole play for once
+        aas = []
+        while self.current_hitobject.time != self.beatmap_parser.hitobjects[-1].time:
+            current_pos_frame = (self.current_frame.x, self.current_frame.y)
+            current_pos_hitobject = (self.current_hitobject.x, 384 -
+                                     self.current_hitobject.y if (self.play_parser.mods & 16) else self.current_hitobject.y)
+            if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
+                aa = self.get_ms_delay(
+                    self.current_frame, self.current_hitobject)
+                if self.current_frame.k1_pressed or self.current_frame.k2_pressed:
+                    if -self.hit_50 < aa < self.hit_50:
+                        self.go_to_next_hitobject()
+                        aas.append((self.current_frame.time, aa,
+                                    self.current_hitobject.type & 2))
+
+            if self.current_frame.time < self.current_hitobject.time + self.hit_50:
+                self.go_to_next_frame()
+            else:
+                self.go_to_next_frame()
+                self.go_to_next_hitobject()
+
+        for _, diff, is_slider in aas:
+            diff = abs(diff)
+            if is_slider:
+                if diff >= self.hit_50:
+                    self.countmiss += 1
+                else:
+                    self.count300 += 1
+            else:
+                if diff >= self.hit_50:
+                    # miss
+                    self.countmiss += 1
+                elif diff >= self.hit_100:
+                    # hit 50
+                    self.count50 += 1
+                elif diff >= self.hit_300:
+                    # hit 100
+                    self.count100 += 1
+                else:
+                    # hit 300
+                    self.count300 += 1
+        #
+        #######
         # GUI code starts here
+
+        self.set_current_frame(0)
+        self.set_current_hitobject(0)
+
         start_time = time.time()
         play_area_width, play_area_height = (800, 600)
         padding_width, padding_height = (130, 60)
@@ -223,7 +273,14 @@ class Analyzer:
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(
                 f"Hit Object index: {self.current_hitobject_index}")
+
+            debuglog.add_text(f"Length of aas: {len(aas)}")
             debuglog.add_text(f"Speed: x{self.anim_speed}")
+            asi = get_closest_as_index(
+                [ztime for ztime, i, j in aas], self.current_frame.time)
+            debuglog.add_text(f"{aas[asi]}")
+            debuglog.add_text(f"300: {self.count300} 100: {self.count100}")
+            debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
             button_pause.set_text("Pause" if self.running else "Play")
             gui.draw()
 
