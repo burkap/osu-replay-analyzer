@@ -54,18 +54,10 @@ class Analyzer:
             od = min(od * 1.4, 10)
 
         # hit windows
-        self.hit_50 = 400 - (20 * od)
-        self.hit_100 = 280 - (16 * od)
-        self.hit_300 = 160 - (12 * od)
+        self.hit_50 = (400 - (20 * od))/2
+        self.hit_100 = (280 - (16 * od))/2
+        self.hit_300 = (160 - (12 * od))/2
 
-        if self.play_parser.mods & 256:  # halftime
-            self.hit_50 *= 4 / 3
-            self.hit_100 *= 4 / 3
-            self.hit_300 *= 4 / 3
-        elif self.play_parser.mods & 64:  # doubletime
-            self.hit_50 *= 2 / 3
-            self.hit_100 *= 2 / 3
-            self.hit_300 *= 2 / 3
 
 
     def switch_running(self):
@@ -157,9 +149,9 @@ class Analyzer:
                 if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
                         (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
                     if -self.hit_50 < aa < self.hit_50:
-                        self.go_to_next_hitobject()
                         aas.append((self.current_frame.time, aa,
                                     self.current_hitobject.type & 2))
+                        self.go_to_next_hitobject()
 
             if self.current_frame.time < self.current_hitobject.time + self.hit_50:
                 self.go_to_next_frame()
