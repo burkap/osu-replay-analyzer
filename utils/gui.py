@@ -4,7 +4,9 @@ import mutagen.mp3
 
 from pygame import gfxdraw
 from pygame.constants import *
-from utils.mathhelper import clamp, is_inside_radius
+
+from utils.beatmap import HitObject
+from utils.mathhelper import clamp, is_inside_radius, Vec2
 from utils.curves import Bezier
 
 
@@ -32,7 +34,7 @@ class GUI:
     single_press_events = []
     holding_down_events = []
 
-    def __init__(self, width, height, song_file ,offset_x=0, offset_y=0):
+    def __init__(self, width, height, song_file, offset_x=0, offset_y=0):
         self.song_file = song_file
 
         mp3 = mutagen.mp3.MP3(self.song_file)
@@ -59,7 +61,6 @@ class GUI:
 
         GUI.is_holding_down_key = [0] * len(GUI.keys)
         GUI.is_single_press_key = [0] * len(GUI.keys)
-
 
         self.music_playing = False
         self.anim_speed = 1
@@ -120,7 +121,7 @@ class GUI:
     def change_play_speed(self, n):
         self.anim_speed = n
         pygame.mixer.quit()
-        new_rate = int(self.rate*n)
+        new_rate = int(self.rate * n)
         pygame.mixer.init(
             frequency=new_rate)
         pygame.mixer.music.load(self.song_file)
@@ -146,7 +147,7 @@ class GUI:
 
     def set_music_pos(self, x):
         pygame.mixer.music.rewind()
-        pygame.mixer.music.set_pos(x/1000)
+        pygame.mixer.music.set_pos(x / 1000)
         self.last_music_time = x
         self.last_pos_time = pygame.mixer.music.get_pos()
 
@@ -186,12 +187,18 @@ class OSU(GUI):
 
 
 class Hitcircle(OSU):
-    def __init__(self, x, y, time, score, radius=50, color=(255, 0, 0)):
-        self.x = int(x)
-        self.y = int(y)
+    def __init__(self,
+                 bmap_hitcircle: HitObject,
+                 is_hardrock: bool,
+                 score: int,
+                 circle_radius: float = 50,
+                 color: tuple = (255, 0, 0)):
+
+        self.x = int(bmap_hitcircle.x)
+        self.y = int(384 - bmap_hitcircle.y if is_hardrock else bmap_hitcircle.y)
         self.score = score
-        self.radius = int(radius)
-        self.time = time
+        self.radius = int(circle_radius)
+        self.time = bmap_hitcircle.time
         self.color = color
 
         osu_width, osu_height = (512, 384)
@@ -218,13 +225,13 @@ class Hitcircle(OSU):
     def display(self):
         if not (0 < (self.time - OSU.current_frame.time) < 450):
             return
-        if self.score[3] == 300:
+        if self.score == 300:
             self.set_color((140, 140, 140))
-        elif self.score[3] == 100:
+        elif self.score == 100:
             self.set_color((70, 255, 70))
-        elif self.score[3] == 50:
+        elif self.score == 50:
             self.set_color((255, 140, 70))
-        elif self.score[3] == 0:
+        elif self.score == 0:
             self.set_color((255, 70, 70))
 
         # Approach circle
@@ -247,7 +254,7 @@ class Hitcircle(OSU):
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, (255, 255, 255))
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
-                              self.radius-4, self.color)
+                              self.radius - 4, self.color)
         gfxdraw.aacircle(
             GUI.play_area,
             self.x + self.offset_width,
@@ -257,14 +264,17 @@ class Hitcircle(OSU):
 
 
 class Hitobject_Slider(OSU):
-    def __init__(self, control_points, circle_radius, time, duration,
+    def __init__(self, bmap_slider: HitObject, circle_radius: float, is_hardrock: bool,
                  show_control_points=False, color=(255, 0, 0)):
-        self.control_points = control_points
-        self.bezier = Bezier(control_points)
+
+        curve_points = [Vec2(i.x, 384 - i.y if is_hardrock else i.y) for i in bmap_slider.curve_points]
+
+        self.control_points = curve_points
+        self.bezier = Bezier(curve_points)
         self.circle_radius = circle_radius
         self.color = color
-        self.time = time
-        self.duration = duration
+        self.time = bmap_slider.time
+        self.duration = bmap_slider.duration
         self.show_control_points = show_control_points
         GUI.hitcircles.append(self)
         self.n = 0
@@ -474,7 +484,7 @@ class Button(GUI):
 
 
 class Slider(GUI):
-    def __init__(self, x, y, width, height, value, max_value, slider_ticks = []):
+    def __init__(self, x, y, width, height, value, max_value, slider_ticks=[]):
         self.x = x
         self.y = y
         self.width = width
@@ -509,7 +519,7 @@ class Slider(GUI):
 
     def drag_events(self):
         self.circle_origin_x = self.x + \
-            int(self.width * (self.value / self.max_value))
+                               int(self.width * (self.value / self.max_value))
         self.circle_origin_y = self.y + int(self.height / 2)
 
         if self.check_mouse_on_ball(self.circle_origin_x, self.circle_origin_y):
@@ -522,7 +532,7 @@ class Slider(GUI):
             self.circle_origin_x = clamp(
                 self.circle_origin_x, self.x, self.x + self.width)
             self.value = (self.circle_origin_x - self.x) * \
-                self.max_value / self.width
+                         self.max_value / self.width
         else:
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
@@ -531,13 +541,13 @@ class Slider(GUI):
                     self.circle_origin_x = clamp(
                         self.circle_origin_x, self.x, self.x + self.width)
                     self.value = (self.circle_origin_x - self.x) * \
-                        self.max_value / self.width
+                                 self.max_value / self.width
                     self.is_dragging_ball = True
 
     def display(self):
         for tick, score in self.slider_ticks:
             tick_origin_x = self.x + \
-                int(self.width * (tick / self.max_value))
+                            int(self.width * (tick / self.max_value))
             tick_origin_y = self.y + int(self.height / 2)
             tick_color = (255, 255, 255)
             if score == 100:
@@ -548,8 +558,7 @@ class Slider(GUI):
                 tick_color = (255, 70, 70)
 
             pygame.draw.rect(GUI.screen, tick_color,
-                             (tick_origin_x, tick_origin_y, 2, self.height*3))
-
+                             (tick_origin_x, tick_origin_y, 2, self.height * 3))
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
                          (self.x, self.y, self.width, self.height))
@@ -567,6 +576,7 @@ class Slider(GUI):
         if self.is_dragging_ball:
             gfxdraw.filled_circle(GUI.screen, self.circle_origin_x,
                                   self.circle_origin_y, ball_size - 2, (0, 0, 0))
+
 
 class TextBox(GUI):
     def __init__(self, x, y, width, height, text):
