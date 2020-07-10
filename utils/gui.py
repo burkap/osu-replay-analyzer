@@ -271,6 +271,12 @@ class Hitobject_Slider(OSU):
 
         self.control_points = curve_points
         self.bezier = Bezier(curve_points)
+        self.ticks = []
+        for t in bmap_slider.ticks + bmap_slider.end_ticks:
+            if is_hardrock:
+                t.y = 384 - t.y
+            self.ticks.append(t)
+
         self.circle_radius = circle_radius
         self.color = color
         self.time = bmap_slider.time
@@ -338,6 +344,12 @@ class Hitobject_Slider(OSU):
             False,
             l2,
             3)
+
+        for tick in self.ticks:
+            gfxdraw.aacircle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
+                             pygame.Color("yellow"))
+            gfxdraw.filled_circle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
+                                  pygame.Color("yellow"))
         if self.show_control_points:
             for i in self.control_points:
                 pygame.draw.circle(GUI.play_area, (255, 0, 0),
@@ -444,8 +456,10 @@ class Cursor(GUI):
         self.y = int(y)
 
     def display(self):
-        pygame.draw.circle(GUI.play_area, (0, 255, 255),
-                           (self.x + self.offset_width, self.y + self.offset_height), 5, 2)
+        gfxdraw.aacircle(GUI.play_area,
+                         self.x + self.offset_width, self.y + self.offset_height, 5, (0, 255, 255))
+        gfxdraw.filled_circle(GUI.play_area,
+                              self.x + self.offset_width, self.y + self.offset_height, 5, (0, 255, 255))
 
 
 class Button(GUI):

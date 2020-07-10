@@ -9,6 +9,7 @@ from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2
 from pygame.constants import *
 import os
 
+
 class Analyzer:
     """
         replay_file     -- replay.file  (.osr)
@@ -22,7 +23,7 @@ class Analyzer:
         self.play_parser = ReplayParser(replay_file)
 
         self.db_parser = DatabaseParser(db_file)
-        bm = self.db_parser.beatmaps[self.play_parser.beatmap_md5.decode("UTF-8")] # Folder, *.mp3, *.osu
+        bm = self.db_parser.beatmaps[self.play_parser.beatmap_md5.decode("UTF-8")]  # Folder, *.mp3, *.osu
         beatmap_folder = os.path.join(songs_folder, bm[0])
         beatmap_osu = os.path.join(beatmap_folder, bm[2])
         self.music_path = os.path.join(beatmap_folder, bm[1])
@@ -67,9 +68,9 @@ class Analyzer:
             od = min(od * 1.4, 10)
 
         # hit windows
-        self.hit_50 = (400 - (20 * od))/2
-        self.hit_100 = (280 - (16 * od))/2
-        self.hit_300 = (160 - (12 * od))/2
+        self.hit_50 = (400 - (20 * od)) / 2
+        self.hit_100 = (280 - (16 * od)) / 2
+        self.hit_300 = (160 - (12 * od)) / 2
 
     def switch_running(self):
         self.running = not self.running
@@ -80,23 +81,10 @@ class Analyzer:
         gui.set_music_pos(self.current_frame.time)
 
     def get_trailing_frames(self, n):
-        frames = []
-        for i in range(0, n):
-            f = self.get_relative_frame(-i)
-            frames.append(f)
-        return frames
+        return self.play_parser.frames[self.current_frame_index - n: self.current_frame_index]
 
     def get_upcoming_frames(self, n):
-        frames = []
-        for i in range(0, n):
-            f = self.get_relative_frame(+i)
-            frames.append(f)
-        return frames
-
-    def get_relative_frame(self, r_index: int):
-        abs_frame_index = self.current_frame_index + r_index
-        abs_frame_index = clamp(abs_frame_index, 0, self._frames_count - 1)
-        return self.play_parser.frames[abs_frame_index]
+        return self.play_parser.frames[self.current_frame_index: self.current_frame_index + n]
 
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
@@ -109,6 +97,7 @@ class Analyzer:
             self.current_frame_index + 1, 0, self._frames_count - 1)
         self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
+
     def set_current_frame(self, index):
         self.current_frame_index = index
         try:
@@ -159,8 +148,8 @@ class Analyzer:
         while True:
             current_pos_frame = (self.current_frame.x, self.current_frame.y)
             current_pos_hitobject = (self.current_hitobject.x, 384 -
-                                     self.current_hitobject.y if (
-                                         self.play_parser.mods & 16) else self.current_hitobject.y)
+                                                               self.current_hitobject.y if (
+                    self.play_parser.mods & 16) else self.current_hitobject.y)
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
@@ -197,7 +186,6 @@ class Analyzer:
         return scores
         #
         #######
-
 
     def run(self):
         """
@@ -256,12 +244,12 @@ class Analyzer:
                         self.play_parser.frames[-1].time, [(i[0].time, i[3]) for i in scores if i[3] != 300])
         volume_slider = Slider(30, 70, 95, 5, gui.volume, 1)
         volume_display = TextBox(5, 63, 20, 20, str(
-            int(volume_slider.get_value()*100))+"%")
+            int(volume_slider.get_value() * 100)) + "%")
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
 
         debuglog = DebugBox(gui_width - 125, 10, 120, 250)
-        instructions_box = DebugBox(gui_width - 125, gui_height-250, 120, 150)
+        instructions_box = DebugBox(gui_width - 125, gui_height - 250, 120, 150)
         instructions_box.add_text("SPACE - play/pause")
         instructions_box.add_text("X - toggle markers ")
         instructions_box.add_text("M - mute on/off")
@@ -281,14 +269,15 @@ class Analyzer:
                 toggle_mute.old_value = volume_slider.get_value()
                 volume_slider.set_value(0)
                 toggle_mute.is_muted = True
+
         toggle_mute.is_muted = False
         toggle_mute.old_value = 0.3
 
         ####
         gui.add_single_press_event([K_SPACE], self.switch_running)
         # to-do V
-        #gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
-        #gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
+        # gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
+        # gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
         gui.add_single_press_event([K_m], toggle_mute)
         #
@@ -309,7 +298,7 @@ class Analyzer:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             volume_display.set_text(
-                str(int(volume_slider.get_value()*100))+"%")
+                str(int(volume_slider.get_value() * 100)) + "%")
             gui.set_volume(volume_slider.get_value())
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
@@ -349,7 +338,6 @@ class Analyzer:
             button_pause.set_text("Pause" if self.running else "Play")
 
             gui.draw()
-
 
             gui.clock.tick(60)
 
