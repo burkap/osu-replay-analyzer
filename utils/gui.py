@@ -1,7 +1,9 @@
 import sys
 import pygame
+import mutagen.mp3
 
 from pygame import gfxdraw
+from pygame.constants import *
 from utils.mathhelper import clamp, is_inside_radius
 from utils.curves import Bezier
 
@@ -31,6 +33,16 @@ class GUI:
     holding_down_events = []
 
     def __init__(self, width, height, offset_x=0, offset_y=0):
+        self.song_file = "data/audio.mp3"
+
+        mp3 = mutagen.mp3.MP3(self.song_file)
+        self.rate = (mp3.info.sample_rate)
+        pygame.mixer.init(
+            frequency=self.rate)
+        self.volume = 0.3
+        pygame.mixer.music.load(self.song_file)
+        pygame.mixer.music.set_volume(self.volume)
+
         pygame.init()
         self.offset_x = offset_x
         self.offset_y = offset_y
@@ -49,11 +61,9 @@ class GUI:
         GUI.is_single_press_key = [0] * len(GUI.keys)
 
 
-        pygame.mixer.init()
-        pygame.mixer.music.load("data/audio.mp3")
-        pygame.mixer.music.set_volume(0.3)
         self.music_playing = False
         self.last_music_time = 0
+        self.last_pos_time = 0
 
     def mouse_events(self):
         GUI.mouse = pygame.mouse.get_pos()
@@ -83,25 +93,34 @@ class GUI:
                 GUI.is_holding_down_key[i] = False
 
     def handle_key_events(self):
-        for keys, event in GUI.single_press_events:
+        for keys, event, *args in GUI.single_press_events:
             for key in keys:
                 if not GUI.is_single_press_key[key]:
                     break
             else:
-                event()
+                event(*args)
 
-        for keys, event in GUI.holding_down_events:
+        for keys, event, *args in GUI.holding_down_events:
             for key in keys:
                 if not GUI.is_holding_down_key[key]:
                     break
             else:
-                event()
+                event(*args)
 
-    def add_single_press_event(self, keys, event):
-        GUI.single_press_events.append((keys, event))
+    def add_single_press_event(self, keys, event, *args):
+        GUI.single_press_events.append((keys, event, *args))
 
-    def add_holding_down_event(self, keys, event):
-        GUI.holding_down_events.append((keys, event))
+    def add_holding_down_event(self, keys, event, *args):
+        GUI.holding_down_events.append((keys, event, *args))
+
+    def change_play_speed(self, n):
+        pygame.mixer.quit()
+        new_rate = int(self.rate*n)
+        pygame.mixer.init(
+            frequency=new_rate)
+        pygame.mixer.music.load(self.song_file)
+        pygame.mixer.music.set_volume(self.volume)
+        self.play_music()
 
     def play_music(self):
         pygame.mixer.music.play()
@@ -118,11 +137,13 @@ class GUI:
             self.music_playing = True
 
     def get_music_pos(self):
-        return pygame.mixer.music.get_pos() - self.last_music_time
+        return pygame.mixer.music.get_pos() - self.last_pos_time + self.last_music_time
 
     def set_music_pos(self, x):
+        pygame.mixer.music.rewind()
         pygame.mixer.music.set_pos(x/1000)
-        self.last_music_time = pygame.mixer.music.get_pos()
+        self.last_music_time = x
+        self.last_pos_time = pygame.mixer.music.get_pos()
 
     def draw(self):
         self.mouse_events()
@@ -413,13 +434,14 @@ class Cursor(GUI):
 
 
 class Button(GUI):
-    def __init__(self, x, y, width, height, text, on_click=0):
+    def __init__(self, x, y, width, height, text, on_click, *args):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.text = text
         self.on_click = on_click
+        self.args = args
 
         self.font = pygame.font.Font("NotoSans-Black.ttf", 15)
 
@@ -434,7 +456,7 @@ class Button(GUI):
             pygame.draw.rect(GUI.screen, (220, 220, 220),
                              (self.x, self.y, self.width, self.height))
             if GUI.is_single_click and self.on_click is not None:
-                self.on_click()
+                self.on_click(*self.args)
         else:
             pygame.draw.rect(GUI.screen, (255, 255, 255),
                              (self.x, self.y, self.width, self.height))

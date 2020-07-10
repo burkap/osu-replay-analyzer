@@ -63,14 +63,10 @@ class Analyzer:
     def switch_running(self):
         self.running = not self.running
 
-    def switch_speed_to_dt(self):
-        self.anim_speed = 1.5
-
-    def switch_speed_to_ht(self):
-        self.anim_speed = 0.5
-
-    def switch_speed_to_nm(self):
-        self.anim_speed = 1
+    def change_speed(self, speed, gui):
+        self.anim_speed = speed
+        gui.change_play_speed(self.anim_speed)
+        gui.set_music_pos(self.current_frame.time)
 
     def get_trailing_frames(self, n):
         frames = []
@@ -207,6 +203,9 @@ class Analyzer:
         #
         #######
 
+    def sync_sound(self, gui):
+        gui.set_music_pos(self.current_frame.time)
+
     def run(self):
         """
             # to-do:
@@ -267,9 +266,10 @@ class Analyzer:
         key2_rectangle = KeyRectangle(
             play_area_width + padding_width * 2 - 70, 370, 50)
 
-        button_dt = Button(30, 100, 50, 30, "DT", self.switch_speed_to_dt)
-        button_nm = Button(30, 150, 50, 30, "NM", self.switch_speed_to_nm)
-        button_ht = Button(30, 200, 50, 30, "HT", self.switch_speed_to_ht)
+        button_dt = Button(30, 100, 50, 30, "DT", self.change_speed, 1.5, gui)
+        button_nm = Button(30, 150, 50, 30, "NM", self.change_speed, 1, gui)
+        button_ht = Button(30, 200, 50, 30, "HT", self.change_speed, 0.5, gui)
+        button_sync = Button(30, 400, 50, 30, "Sync", self.sync_sound, gui)
 
         slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5,
                         self.current_ms,
@@ -299,6 +299,7 @@ class Analyzer:
         #
         ########
         gui.set_music_pos(self.current_frame.time)
+        test = 0
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
@@ -316,6 +317,12 @@ class Analyzer:
 
             debuglog.add_text(
                 f"Music pos: {gui.get_music_pos()}")
+            debuglog.add_text(
+                f"Music diff frame: {self.current_frame.time - gui.get_music_pos()}")
+            debuglog.add_text(
+                f"Music diff ms: {self.current_ms - gui.get_music_pos()}")
+            debuglog.add_text(
+                f"Is running: {self.running}")
 
             debuglog.add_text(
                 f"")
@@ -357,7 +364,7 @@ class Analyzer:
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
-                gui.set_music_pos(self.current_ms)
+                gui.set_music_pos(self.current_frame.time)
             else:
                 slider.set_value(self.current_ms)
 
@@ -373,15 +380,18 @@ class Analyzer:
             #   GUI CODE ENDS HERE
             #######################
 
-
             if self.current_ms >= self.current_frame.time:
-                self.go_to_next_frame()
+                self.set_current_frame(get_closest_as_index(
+                    self.play_parser.frame_times, self.current_ms))
             elif self.current_ms < self.prev_frame.time:
-                self.go_to_prev_frame()
+                self.set_current_frame(get_closest_as_index(
+                    self.play_parser.frame_times, self.current_ms))
             if not self.current_frame.time < self.current_hitobject.time:
                 self.go_to_next_hitobject()
             if self.running:
                 gui.unpause_music()
                 self.go_to_next_ms()
             else:
+                self.sync_sound(gui)
                 gui.pause_music()
+                test = self.current_frame.time
