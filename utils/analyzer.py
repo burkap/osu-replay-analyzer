@@ -377,6 +377,13 @@ class Analyzer:
 
             gui.draw()
 
+            #####
+            # to-do: remove this completely by making current_ms
+            # catch music position by slowing down or speeding up if difference is big enough
+            if self.anim_speed == 1 and abs(self.current_ms - gui.get_music_pos()) > 100:
+                self.sync_sound(gui)
+            #####
+
             gui.clock.tick(60 * self.anim_speed)
 
             if self.current_frame.k1_pressed:
