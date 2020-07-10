@@ -50,6 +50,7 @@ class Analyzer:
 
         self.trail_length = 10
         self.anim_speed = 1
+        self.music_catchup_boost = 1
         self.running = True
         # set cs
         cs = self.beatmap_parser.difficulty["CircleSize"]
@@ -103,8 +104,8 @@ class Analyzer:
                                 60, 0, self.play_parser.frames[-1].time)
 
     def go_to_next_ms(self):
-        self.current_ms = clamp(self.current_ms + 1000 //
-                                60, 0, self.play_parser.frames[-1].time)
+        next_ms = self.current_ms + (1000//60 * self.anim_speed) + self.music_catchup_boost
+        self.current_ms = clamp(next_ms, 0, self.play_parser.frames[-1].time)
 
     def go_to_next_ms_faster(self):
         self.current_ms = clamp(self.current_ms + 30, 0,
@@ -348,7 +349,7 @@ class Analyzer:
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
-            debuglog.add_text(f"Current time:{self.current_ms}")
+            debuglog.add_text(f"Current time:{self.current_ms:.2f}")
             debuglog.add_text(
                 f"Cur. Hit Obj. time: {self.current_hitobject.time}")
             debuglog.add_text(
@@ -361,7 +362,7 @@ class Analyzer:
             debuglog.add_text(
                 f"Music diff frame: {self.current_frame.time - gui.get_music_pos()}")
             debuglog.add_text(
-                f"Music diff ms: {self.current_ms - gui.get_music_pos()}")
+                f"Music diff ms: {self.current_ms - gui.get_music_pos():.2f}")
             debuglog.add_text(
                 f"Is running: {self.running}")
 
@@ -392,11 +393,10 @@ class Analyzer:
             #####
             # to-do: remove this completely by making current_ms
             # catch music position by slowing down or speeding up if difference is big enough
-            if self.anim_speed == 1 and abs(self.current_ms - gui.get_music_pos()) > 100:
-                self.sync_sound(gui)
+            self.music_catchup_boost = gui.get_music_pos() * self.anim_speed - self.current_ms
             #####
 
-            gui.clock.tick(60 * self.anim_speed)
+            gui.clock.tick(60)
 
             if self.current_frame.k1_pressed:
                 key1_rectangle.set_key_down()
