@@ -1,4 +1,5 @@
 from utils.replay_parser import ReplayParser
+from utils.osu_db_parser import DatabaseParser
 from utils.beatmap import Beatmap
 from utils.gui import GUI, Hitcircle, Cursor, Button, Slider, DebugBox, OSU, Hitobject_Slider, TextBox, CursorTrail, \
     KeyRectangle
@@ -6,7 +7,7 @@ import time
 import numpy as np
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 from pygame.constants import *
-
+import os
 
 class Analyzer:
     """
@@ -14,9 +15,19 @@ class Analyzer:
         beatmap_file    -- beatmap file (.osu)
     """
 
-    def __init__(self, replay_file: str, beatmap_file: str):
+    def __init__(self, replay_file: str, osu_path: str):
+        songs_folder = os.path.join(osu_path, "Songs/")
+        db_file = os.path.join(osu_path, "osu!.db")
+
         self.play_parser = ReplayParser(replay_file)
-        self.beatmap_parser = Beatmap(beatmap_file)
+
+        self.db_parser = DatabaseParser(db_file)
+        bm = self.db_parser.beatmaps[self.play_parser.beatmap_md5.decode("UTF-8")] # Folder, *.mp3, *.osu
+        beatmap_folder = os.path.join(songs_folder, bm[0])
+        beatmap_osu = os.path.join(beatmap_folder, bm[2])
+        self.music_path = os.path.join(beatmap_folder, bm[1])
+
+        self.beatmap_parser = Beatmap(beatmap_osu)
 
         self._frames_count = len(self.play_parser.frames)
         self._hitobjects_count = len(self.beatmap_parser.hitobjects)
@@ -229,6 +240,7 @@ class Analyzer:
         gui = GUI(
             play_area_width,
             play_area_height,
+            self.music_path,
             padding_width,
             padding_height)
         gui.play_music()

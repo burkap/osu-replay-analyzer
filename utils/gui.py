@@ -32,8 +32,8 @@ class GUI:
     single_press_events = []
     holding_down_events = []
 
-    def __init__(self, width, height, offset_x=0, offset_y=0):
-        self.song_file = "data/audio.mp3"
+    def __init__(self, width, height, song_file ,offset_x=0, offset_y=0):
+        self.song_file = song_file
 
         mp3 = mutagen.mp3.MP3(self.song_file)
         self.rate = (mp3.info.sample_rate)
