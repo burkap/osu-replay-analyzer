@@ -88,16 +88,20 @@ class Analyzer:
         return self.play_parser.frames[abs_frame_index]
 
     def go_to_prev_ms(self):
-        self.current_ms = clamp(self.current_ms - 1000//60, 0, self.play_parser.frames[-1].time)
+        self.current_ms = clamp(self.current_ms - 1000 //
+                                60, 0, self.play_parser.frames[-1].time)
 
     def go_to_next_ms(self):
-        self.current_ms = clamp(self.current_ms + 1000//60, 0, self.play_parser.frames[-1].time)
+        self.current_ms = clamp(self.current_ms + 1000 //
+                                60, 0, self.play_parser.frames[-1].time)
 
     def go_to_next_ms_faster(self):
-        self.current_ms = clamp(self.current_ms + 30, 0, self.play_parser.frames[-1].time)
+        self.current_ms = clamp(self.current_ms + 30, 0,
+                                self.play_parser.frames[-1].time)
 
     def go_to_prev_ms_faster(self):
-        self.current_ms = clamp(self.current_ms - 30, 0, self.play_parser.frames[-1].time)
+        self.current_ms = clamp(self.current_ms - 30, 0,
+                                self.play_parser.frames[-1].time)
 
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
@@ -158,7 +162,7 @@ class Analyzer:
                 return 300
 
     def get_scores(self):
-        ######################################-------------|score is integer value 300, 100, 50, or 0 if miss
+        # -------------|score is integer value 300, 100, 50, or 0 if miss
         # Running over whole play for once                 v
         scores = []  # this gets (frame, hitobject, diff, score)
         while True:
@@ -274,28 +278,50 @@ class Analyzer:
         slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5,
                         self.current_ms,
                         self.play_parser.frames[-1].time, [(i[0].time, i[3]) for i in scores if i[3] != 300])
+        volume_slider = Slider(30, 70, 95, 5, gui.volume, 1)
+        volume_display = TextBox(5, 63, 20, 20, str(
+            int(volume_slider.get_value()*100))+"%")
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
 
-        debuglog = DebugBox(gui_width - 125, 10, 120, 200)
-        instructions_box = DebugBox(gui_width - 125, 220, 120, 70)
+        debuglog = DebugBox(gui_width - 125, 10, 120, 250)
+        instructions_box = DebugBox(gui_width - 125, gui_height-250, 120, 150)
         instructions_box.add_text("SPACE - play/pause")
         instructions_box.add_text("X - toggle markers ")
+        instructions_box.add_text("M - mute on/off")
         instructions_box.add_text("RIGHT - next frame")
         instructions_box.add_text("LEFT - prev frame")
-        instructions_box.add_text("CTRL to skip frames faster")
+        instructions_box.add_text("CTRL - skip frames faster")
 
         ##########
         # Keyboard Events
+        ####
+
+        def toggle_mute():
+            if toggle_mute.is_muted:
+                volume_slider.set_value(toggle_mute.old_value)
+                toggle_mute.is_muted = False
+            else:
+                toggle_mute.old_value = volume_slider.get_value()
+                volume_slider.set_value(0)
+                toggle_mute.is_muted = True
+        toggle_mute.is_muted = False
+        toggle_mute.old_value = 0.3
+
+        ####
         gui.add_single_press_event([K_SPACE], self.switch_running)
         gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
         gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
-
+        gui.add_single_press_event([K_m], toggle_mute)
+        #
+        #####################
 
         # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
-        gui.add_holding_down_event([K_RIGHT, K_LCTRL], self.go_to_next_ms_faster)
-        gui.add_holding_down_event([K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
+        gui.add_holding_down_event(
+            [K_RIGHT, K_LCTRL], self.go_to_next_ms_faster)
+        gui.add_holding_down_event(
+            [K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
         #
         ########
         gui.set_music_pos(self.current_frame.time)
@@ -303,6 +329,9 @@ class Analyzer:
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
+            volume_display.set_text(
+                str(int(volume_slider.get_value()*100))+"%")
+            gui.set_volume(volume_slider.get_value())
             debuglog.clear()
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
@@ -341,8 +370,10 @@ class Analyzer:
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
             button_pause.set_text("Pause" if self.running else "Play")
 
-            frame_time_diff = max(1, self.current_frame.time - self.prev_frame.time)
-            to_next_frame_time_ratio = (self.current_ms - self.prev_frame.time) / frame_time_diff
+            frame_time_diff = max(
+                1, self.current_frame.time - self.prev_frame.time)
+            to_next_frame_time_ratio = (
+                self.current_ms - self.prev_frame.time) / frame_time_diff
 
             gui.draw()
 
