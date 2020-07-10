@@ -35,7 +35,6 @@ class Analyzer:
         self.current_frame_index = 0
         self.current_hitobject_index = 0
 
-        self.current_ms = self.play_parser.frames[0].time
         self.current_frame = self.play_parser.frames[self.current_frame_index]
         self.prev_frame = self.play_parser.frames[self.current_frame_index]
 
@@ -99,22 +98,6 @@ class Analyzer:
         abs_frame_index = clamp(abs_frame_index, 0, self._frames_count - 1)
         return self.play_parser.frames[abs_frame_index]
 
-    def go_to_prev_ms(self):
-        self.current_ms = clamp(self.current_ms - 1000 //
-                                60, 0, self.play_parser.frames[-1].time)
-
-    def go_to_next_ms(self):
-        next_ms = self.current_ms + (1000//60 * self.anim_speed) + self.music_catchup_boost
-        self.current_ms = clamp(next_ms, 0, self.play_parser.frames[-1].time)
-
-    def go_to_next_ms_faster(self):
-        self.current_ms = clamp(self.current_ms + 30, 0,
-                                self.play_parser.frames[-1].time)
-
-    def go_to_prev_ms_faster(self):
-        self.current_ms = clamp(self.current_ms - 30, 0,
-                                self.play_parser.frames[-1].time)
-
     def go_to_prev_frame(self):
         self.current_frame_index = clamp(
             self.current_frame_index - 1, 0, self._frames_count - 1)
@@ -126,10 +109,6 @@ class Analyzer:
             self.current_frame_index + 1, 0, self._frames_count - 1)
         self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
-
-    def set_current_ms(self, ms):
-        self.current_ms = ms
-
     def set_current_frame(self, index):
         self.current_frame_index = index
         try:
@@ -219,8 +198,6 @@ class Analyzer:
         #
         #######
 
-    def sync_sound(self, gui):
-        gui.set_music_pos(self.current_ms / self.anim_speed)
 
     def run(self):
         """
@@ -286,10 +263,9 @@ class Analyzer:
         button_dt = Button(30, 100, 50, 30, "DT", self.change_speed, 1.5, gui)
         button_nm = Button(30, 150, 50, 30, "NM", self.change_speed, 1, gui)
         button_ht = Button(30, 200, 50, 30, "HT", self.change_speed, 0.5, gui)
-        button_sync = Button(30, 400, 50, 30, "Sync", self.sync_sound, gui)
 
         slider = Slider(padding_width + 35, gui_height - 50, gui_width - padding_width * 2 - 70, 5,
-                        self.current_ms,
+                        gui.get_music_pos(),
                         self.play_parser.frames[-1].time, [(i[0].time, i[3]) for i in scores if i[3] != 300])
         volume_slider = Slider(30, 70, 95, 5, gui.volume, 1)
         volume_display = TextBox(5, 63, 20, 20, str(
@@ -323,22 +299,25 @@ class Analyzer:
 
         ####
         gui.add_single_press_event([K_SPACE], self.switch_running)
-        gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
-        gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
+        # to-do V
+        #gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
+        #gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
         gui.add_single_press_event([K_m], toggle_mute)
         #
         #####################
 
         # prev is 1 more than next because there's one go_to_next_frame() at the end of loop
-        gui.add_holding_down_event(
+        # to-do V
+        """ gui.add_holding_down_event(
             [K_RIGHT, K_LCTRL], self.go_to_next_ms_faster)
         gui.add_holding_down_event(
             [K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
+        """
         #
         ########
         gui.pause_music()
-        gui.set_music_pos(self.current_ms)
+        gui.set_music_pos(gui.get_music_pos())
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
@@ -346,12 +325,9 @@ class Analyzer:
                 str(int(volume_slider.get_value()*100))+"%")
             gui.set_volume(volume_slider.get_value())
             debuglog.clear()
-            self.music_catchup_boost = gui.get_music_pos() - self.current_ms
-            debuglog.add_text(f"Catchup Boost: {self.music_catchup_boost}")
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
-            debuglog.add_text(f"Current time:{self.current_ms:.2f}")
             debuglog.add_text(
                 f"Cur. Hit Obj. time: {self.current_hitobject.time}")
             debuglog.add_text(
@@ -364,7 +340,7 @@ class Analyzer:
             debuglog.add_text(
                 f"Music diff frame: {self.current_frame.time - gui.get_music_pos()}")
             debuglog.add_text(
-                f"Music diff ms: {self.current_ms - gui.get_music_pos():.2f}")
+                f"Music diff ms: {self.current_frame.time - gui.get_music_pos():.2f}")
             debuglog.add_text(
                 f"Is running: {self.running}")
 
@@ -387,10 +363,6 @@ class Analyzer:
 
             gui.draw()
 
-            #####
-            # to-do: remove this completely by making current_ms
-            # catch music position by slowing down or speeding up if difference is big enough
-            #####
 
             gui.clock.tick(60)
 
@@ -405,18 +377,17 @@ class Analyzer:
                 key2_rectangle.set_key_up()
 
             if slider.is_dragging_ball:
-                self.set_current_ms(int(slider.get_value()))
                 self.set_current_frame(get_closest_as_index(
                     self.play_parser.frame_times, int(slider.get_value())))
                 self.set_current_hitobject(get_closest_as_index(
                     [i.time for i in self.beatmap_parser.hitobjects], int(slider.get_value())))
                 gui.set_music_pos(self.current_frame.time)
             else:
-                slider.set_value(self.current_ms)
+                slider.set_value(gui.get_music_pos())
 
-            cursor_x = np.interp(self.current_ms, [self.prev_frame.time, self.current_frame.time],
+            cursor_x = np.interp(gui.get_music_pos(), [self.prev_frame.time, self.current_frame.time],
                                  [self.prev_frame.x, self.current_frame.x])
-            cursor_y = np.interp(self.current_ms, [self.prev_frame.time, self.current_frame.time],
+            cursor_y = np.interp(gui.get_music_pos(), [self.prev_frame.time, self.current_frame.time],
                                  [self.prev_frame.y, self.current_frame.y])
             cursor.set_cursor_position(cursor_x, cursor_y)
             cursor_trail.set_trailing_points(
@@ -426,18 +397,9 @@ class Analyzer:
             #   GUI CODE ENDS HERE
             #######################
 
-            if self.current_ms >= self.current_frame.time:
-                self.set_current_frame(get_closest_as_index(
-                    self.play_parser.frame_times, self.current_ms))
-            elif self.current_ms < self.prev_frame.time:
-                self.set_current_frame(get_closest_as_index(
-                    self.play_parser.frame_times, self.current_ms))
-            if not self.current_frame.time < self.current_hitobject.time:
-                self.go_to_next_hitobject()
+            self.set_current_frame(get_closest_as_index(self.play_parser.frame_times, gui.get_music_pos()))
             if self.running:
                 gui.unpause_music()
-                self.go_to_next_ms()
             else:
-                self.sync_sound(gui)
                 gui.pause_music()
                 test = self.current_frame.time

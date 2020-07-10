@@ -62,6 +62,7 @@ class GUI:
 
 
         self.music_playing = False
+        self.anim_speed = 1
         self.last_music_time = 0
         self.last_pos_time = 0
 
@@ -117,6 +118,7 @@ class GUI:
         pygame.mixer.music.set_volume(n)
 
     def change_play_speed(self, n):
+        self.anim_speed = n
         pygame.mixer.quit()
         new_rate = int(self.rate*n)
         pygame.mixer.init(
@@ -140,7 +142,7 @@ class GUI:
             self.music_playing = True
 
     def get_music_pos(self):
-        return pygame.mixer.music.get_pos() - self.last_pos_time + self.last_music_time
+        return self.anim_speed * (pygame.mixer.music.get_pos() - self.last_pos_time) + self.last_music_time
 
     def set_music_pos(self, x):
         pygame.mixer.music.rewind()
