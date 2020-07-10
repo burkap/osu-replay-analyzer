@@ -1,4 +1,3 @@
-import winreg
 import os
 import configparser
 import sys
@@ -7,6 +6,7 @@ config = configparser.ConfigParser()
 
 
 def check_registry_entry_for_osu():
+    import winreg
     reg_table = winreg.ConnectRegistry(None, winreg.HKEY_CLASSES_ROOT)
 
     try:
@@ -25,7 +25,12 @@ if os.path.exists('analyzer.cfg'):
     config.read('analyzer.cfg')
     osu_path = config['OSU']['OSU_PATH']
 else:
-    osu_path = check_registry_entry_for_osu()
+
+    if sys.platform == 'win32':
+        osu_path = check_registry_entry_for_osu()
+    else:
+        osu_path = None
+
     if osu_path is None:
         config['OSU'] = {'OSU_PATH': 'YOUR OSU! PATH HERE INSTEAD OF THIS TEXT'}
         with open('analyzer.cfg', 'w') as configfile:

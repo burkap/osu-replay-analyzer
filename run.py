@@ -1,10 +1,6 @@
 import os
-from sys import platform
 from utils.analyzer import Analyzer
-if platform == "win32":
-    from utils.config_parser import osu_path
-else:
-    osu_path = "/insert/your/osu/path/here" # Ex: C:\Users<Username>\AppData\Local\osu!\
+from utils.config_parser import osu_path
 
 cwd = os.getcwd()
 data_folder = os.path.join(cwd, "data")
