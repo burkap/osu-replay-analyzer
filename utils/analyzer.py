@@ -16,7 +16,7 @@ class Analyzer:
     """
 
     def __init__(self, replay_file: str, osu_path: str):
-        songs_folder = os.path.join(osu_path, "Songs/")
+        songs_folder = os.path.join(osu_path, "Songs")
         db_file = os.path.join(osu_path, "osu!.db")
 
         self.play_parser = ReplayParser(replay_file)

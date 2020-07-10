@@ -113,7 +113,7 @@ class DatabaseParser:
 
     def read_string(self):
         string_header = self.database_raw.read(1)
-        string = ""
+        string = b''
         if string_header == b'\x0b':
             string_length = Uleb128(0).decode_from_stream(self.database_raw, 'read', 1)
             string = self.database_raw.read(string_length)
