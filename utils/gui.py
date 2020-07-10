@@ -113,6 +113,9 @@ class GUI:
     def add_holding_down_event(self, keys, event, *args):
         GUI.holding_down_events.append((keys, event, *args))
 
+    def set_volume(self, n):
+        pygame.mixer.music.set_volume(n)
+
     def change_play_speed(self, n):
         pygame.mixer.quit()
         new_rate = int(self.rate*n)
@@ -469,7 +472,7 @@ class Button(GUI):
 
 
 class Slider(GUI):
-    def __init__(self, x, y, width, height, value, max_value, slider_ticks):
+    def __init__(self, x, y, width, height, value, max_value, slider_ticks = []):
         self.x = x
         self.y = y
         self.width = width
@@ -502,6 +505,33 @@ class Slider(GUI):
         else:
             return False
 
+    def drag_events(self):
+        self.circle_origin_x = self.x + \
+            int(self.width * (self.value / self.max_value))
+        self.circle_origin_y = self.y + int(self.height / 2)
+
+        if self.check_mouse_on_ball(self.circle_origin_x, self.circle_origin_y):
+            if GUI.is_single_click:
+                self.is_dragging_ball = True
+                self.drag_origin_x = GUI.mouse[0]
+                self.drag_origin_y = GUI.mouse[1]
+        if self.is_dragging_ball and GUI.is_holding_down:
+            self.circle_origin_x = GUI.mouse[0]
+            self.circle_origin_x = clamp(
+                self.circle_origin_x, self.x, self.x + self.width)
+            self.value = (self.circle_origin_x - self.x) * \
+                self.max_value / self.width
+        else:
+            self.is_dragging_ball = False
+            if self.check_mouse_on_slider():
+                if GUI.is_single_click:
+                    self.circle_origin_x = GUI.mouse[0]
+                    self.circle_origin_x = clamp(
+                        self.circle_origin_x, self.x, self.x + self.width)
+                    self.value = (self.circle_origin_x - self.x) * \
+                        self.max_value / self.width
+                    self.is_dragging_ball = True
+
     def display(self):
         for tick, score in self.slider_ticks:
             tick_origin_x = self.x + \
@@ -518,47 +548,23 @@ class Slider(GUI):
             pygame.draw.rect(GUI.screen, tick_color,
                              (tick_origin_x, tick_origin_y, 2, self.height*3))
 
-        circle_origin_x = self.x + \
-            int(self.width * (self.value / self.max_value))
-        circle_origin_y = self.y + int(self.height / 2)
 
         pygame.draw.rect(GUI.screen, (255, 255, 255),
                          (self.x, self.y, self.width, self.height))
 
-        if self.check_mouse_on_ball(circle_origin_x, circle_origin_y):
-            if GUI.is_single_click:
-                self.is_dragging_ball = True
-                self.drag_origin_x = GUI.mouse[0]
-                self.drag_origin_y = GUI.mouse[1]
-        if self.is_dragging_ball and GUI.is_holding_down:
-            circle_origin_x = GUI.mouse[0]
-            circle_origin_x = clamp(
-                circle_origin_x, self.x, self.x + self.width)
-            self.value = (circle_origin_x - self.x) * \
-                self.max_value / self.width
-        else:
-            self.is_dragging_ball = False
-            if self.check_mouse_on_slider():
-                if GUI.is_single_click:
-                    circle_origin_x = GUI.mouse[0]
-                    circle_origin_x = clamp(
-                        circle_origin_x, self.x, self.x + self.width)
-                    self.value = (circle_origin_x - self.x) * \
-                        self.max_value / self.width
-                    self.is_dragging_ball = True
+        self.drag_events()
 
         ball_size = 8 if self.is_dragging_ball else 7
 
-        gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, ball_size, (0, 255, 255))
-        gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                              circle_origin_y, ball_size, (0, 255, 255))
-        gfxdraw.aacircle(GUI.screen, circle_origin_x,
-                         circle_origin_y, ball_size - 2, (0, 0, 0))
+        gfxdraw.aacircle(GUI.screen, self.circle_origin_x,
+                         self.circle_origin_y, ball_size, (0, 255, 255))
+        gfxdraw.filled_circle(GUI.screen, self.circle_origin_x,
+                              self.circle_origin_y, ball_size, (0, 255, 255))
+        gfxdraw.aacircle(GUI.screen, self.circle_origin_x,
+                         self.circle_origin_y, ball_size - 2, (0, 0, 0))
         if self.is_dragging_ball:
-            gfxdraw.filled_circle(GUI.screen, circle_origin_x,
-                                  circle_origin_y, ball_size - 2, (0, 0, 0))
-
+            gfxdraw.filled_circle(GUI.screen, self.circle_origin_x,
+                                  self.circle_origin_y, ball_size - 2, (0, 0, 0))
 
 class TextBox(GUI):
     def __init__(self, x, y, width, height, text):
