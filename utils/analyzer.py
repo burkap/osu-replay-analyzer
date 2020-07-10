@@ -220,7 +220,7 @@ class Analyzer:
         #######
 
     def sync_sound(self, gui):
-        gui.set_music_pos(self.current_frame.time)
+        gui.set_music_pos(self.current_ms / self.anim_speed)
 
     def run(self):
         """
@@ -337,8 +337,8 @@ class Analyzer:
             [K_LEFT, K_LCTRL], self.go_to_prev_ms_faster)
         #
         ########
-        gui.set_music_pos(self.current_frame.time)
-        test = 0
+        gui.pause_music()
+        gui.set_music_pos(self.current_ms)
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
@@ -346,6 +346,8 @@ class Analyzer:
                 str(int(volume_slider.get_value()*100))+"%")
             gui.set_volume(volume_slider.get_value())
             debuglog.clear()
+            self.music_catchup_boost = gui.get_music_pos() - self.current_ms
+            debuglog.add_text(f"Catchup Boost: {self.music_catchup_boost}")
             debuglog.add_text(f"Circle Radius: {round(self.circle_radius)}")
             debuglog.add_text(f"Frame index: {self.current_frame_index}")
             debuglog.add_text(f"Frame time:{self.current_frame.time}")
@@ -383,17 +385,11 @@ class Analyzer:
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
             button_pause.set_text("Pause" if self.running else "Play")
 
-            frame_time_diff = max(
-                1, self.current_frame.time - self.prev_frame.time)
-            to_next_frame_time_ratio = (
-                self.current_ms - self.prev_frame.time) / frame_time_diff
-
             gui.draw()
 
             #####
             # to-do: remove this completely by making current_ms
             # catch music position by slowing down or speeding up if difference is big enough
-            self.music_catchup_boost = gui.get_music_pos() * self.anim_speed - self.current_ms
             #####
 
             gui.clock.tick(60)
