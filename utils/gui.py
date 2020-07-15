@@ -276,7 +276,7 @@ class Hitobject_Slider(OSU):
                      for i in bmap_slider.path]
 
         self.ticks = []
-        for t in bmap_slider.ticks + bmap_slider.end_ticks:
+        for t in bmap_slider.ticks:
             if OSU.is_hardrock:
                 t.y = 384 - t.y
             self.ticks.append(t)
@@ -327,11 +327,18 @@ class Hitobject_Slider(OSU):
         pygame.draw.aalines(GUI.play_area, pygame.Color("gray"), False, [
             (i.x + self.offset_width, i.y + self.offset_height) for i in self.path], 3)
 
-        for tick in self.ticks:
+        for tick in ticks:
             gfxdraw.aacircle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
                              pygame.Color("yellow"))
             gfxdraw.filled_circle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
                                   pygame.Color("yellow"))
+
+        for i in self.bmap_slider.end_ticks[:-1]:
+            gfxdraw.aacircle(GUI.play_area, int(i.x) + self.offset_width, int(i.y) + self.offset_height, 12,
+                             pygame.Color("cyan"))
+            gfxdraw.filled_circle(GUI.play_area, int(i.x) + self.offset_width, int(i.y) + self.offset_height, 12,
+                                  pygame.Color("cyan"))
+
 
 
 class CursorTrail(GUI):
