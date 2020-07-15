@@ -248,6 +248,8 @@ class Analyzer:
         time_display = TextBox(padding_width - 10, gui_height -
                                58, 50, 20, str(self.current_frame.time))
 
+        ms_arr = []
+        ms_display = TextBox(gui_width - padding_width - 40, gui_height -padding_height - 20, 50, 20, "0")
         debuglog = DebugBox(gui_width - 125, 10, 120, 250)
         instructions_box = DebugBox(gui_width - 125, gui_height - 250, 120, 150)
         instructions_box.add_text("SPACE - play/pause")
@@ -297,6 +299,9 @@ class Analyzer:
         while True:
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
+            ms_arr.append(abs(self.current_frame.time - gui.get_music_pos()))
+            ms_arr=ms_arr[-10:]
+            ms_display.set_text(str(sum(ms_arr)/len(ms_arr)))
             volume_display.set_text(
                 str(int(volume_slider.get_value() * 100)) + "%")
             gui.set_volume(volume_slider.get_value())
