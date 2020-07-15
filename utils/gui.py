@@ -327,7 +327,7 @@ class Hitobject_Slider(OSU):
         pygame.draw.aalines(GUI.play_area, pygame.Color("gray"), False, [
             (i.x + self.offset_width, i.y + self.offset_height) for i in self.path], 3)
 
-        for tick in ticks:
+        for tick in self.ticks:
             gfxdraw.aacircle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
                              pygame.Color("yellow"))
             gfxdraw.filled_circle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
