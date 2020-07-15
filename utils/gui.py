@@ -198,7 +198,8 @@ class Hitcircle(OSU):
                  color: tuple = (255, 0, 0)):
 
         self.x = int(bmap_hitcircle.x)
-        self.y = int(384 - bmap_hitcircle.y if OSU.is_hardrock else bmap_hitcircle.y)
+        self.y = int(
+            384 - bmap_hitcircle.y if OSU.is_hardrock else bmap_hitcircle.y)
         self.score = score
         self.radius = int(circle_radius)
         self.time = bmap_hitcircle.time
@@ -510,7 +511,7 @@ class Slider(GUI):
 
     def drag_events(self):
         self.circle_origin_x = self.x + \
-                               int(self.width * (self.value / self.max_value))
+            int(self.width * (self.value / self.max_value))
         self.circle_origin_y = self.y + int(self.height / 2)
 
         if self.check_mouse_on_ball(self.circle_origin_x, self.circle_origin_y):
@@ -523,7 +524,7 @@ class Slider(GUI):
             self.circle_origin_x = clamp(
                 self.circle_origin_x, self.x, self.x + self.width)
             self.value = (self.circle_origin_x - self.x) * \
-                         self.max_value / self.width
+                self.max_value / self.width
         else:
             self.is_dragging_ball = False
             if self.check_mouse_on_slider():
@@ -532,13 +533,13 @@ class Slider(GUI):
                     self.circle_origin_x = clamp(
                         self.circle_origin_x, self.x, self.x + self.width)
                     self.value = (self.circle_origin_x - self.x) * \
-                                 self.max_value / self.width
+                        self.max_value / self.width
                     self.is_dragging_ball = True
 
     def display(self):
         for tick, score in self.slider_ticks:
             tick_origin_x = self.x + \
-                            int(self.width * (tick / self.max_value))
+                int(self.width * (tick / self.max_value))
             tick_origin_y = self.y + int(self.height / 2)
             tick_color = (255, 255, 255)
             if score == 100:
