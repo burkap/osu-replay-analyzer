@@ -22,6 +22,7 @@ def x_get_length(pos, length):
         dist += pos[i].distance(pos[i - 1])
         if length < dist:
             return i
+    return 0
 
 
 class Bezier(object):
