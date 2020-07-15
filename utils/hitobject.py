@@ -38,7 +38,8 @@ class HitObject(object):
         # isSlider?
         if 2 & self.type:
             self.slider_type = slider_type
-            self.curve_points = [mathhelper.Vec2(self.x, self.y)] + curve_points
+            self.curve_points = [mathhelper.Vec2(
+                self.x, self.y)] + curve_points
             self.repeat = repeat
             self.pixel_length = pixel_length
 
@@ -47,12 +48,12 @@ class HitObject(object):
             self.difficulty = difficulty
             self.tick_distance = tick_distance
             self.duration = (int(self.timing_point["raw_bpm"]) * (pixel_length / (
-                        self.difficulty["SliderMultiplier"] * self.timing_point["spm"])) / 100) * self.repeat
+                self.difficulty["SliderMultiplier"] * self.timing_point["spm"])) / 100) * self.repeat
 
             self.ticks = []
             self.end_ticks = []
 
-            self.calc_slider()
+            self.calc_slider(True)
 
     def calc_slider(self, calc_path=False):
         # Fix broken objects
@@ -66,21 +67,24 @@ class HitObject(object):
             try:
                 curve = curves.Perfect(self.curve_points)
             except:
-                curve = curves.Bezier(self.curve_points)
+                curve = curves.Bezier(
+                    self.curve_points, self.pixel_length)
                 self.slider_type = "B"
         elif self.slider_type == "B":  # Bezier
-            curve = curves.Bezier(self.curve_points)
+            curve = curves.Bezier(self.curve_points, self.pixel_length)
         elif self.slider_type == "C":  # Catmull
             curve = curves.Catmull(self.curve_points)
 
         # Quickest to skip this
-        if calc_path:  # Make path if requested (For drawing visual for testing)
+        # Make path if requested (For drawing visual for testing)
+        if calc_path:
             if self.slider_type == "L":  # Linear
-                self.path = curves.Linear(self.curve_points).pos
+                self.path = curves.Linear(
+                    self.curve_points, self.pixel_length).pos
             elif self.slider_type == "P":  # Perfect
                 self.path = []
                 l = 0
-                step = 5
+                step = 2
                 while l <= self.pixel_length:
                     self.path.append(curve.point_at_distance(l))
                     l += step
@@ -89,19 +93,23 @@ class HitObject(object):
             elif self.slider_type == "C":  # Catmull
                 self.path = curve.pos
             else:
-                raise Exception("Slidertype not supported! ({})".format(self.slider_type))
+                raise Exception(
+                    "Slidertype not supported! ({})".format(self.slider_type))
 
         # Set slider ticks
         current_distance = self.tick_distance
-        time_add = self.duration * (self.tick_distance / (self.pixel_length * self.repeat))
+        time_add = self.duration * \
+            (self.tick_distance / (self.pixel_length * self.repeat))
 
         while current_distance < self.pixel_length - self.tick_distance / 8:
             if self.slider_type == "L":  # Linear
-                point = mathhelper.point_on_line(self.curve_points[0], self.curve_points[1], current_distance)
+                point = mathhelper.point_on_line(
+                    self.curve_points[0], self.curve_points[1], current_distance)
             else:  # Perfect, Bezier & Catmull uses the same function
                 point = curve.point_at_distance(current_distance)
 
-            self.ticks.append(SliderTick(point.x, point.y, self.time + time_add * (len(self.ticks) + 1)))
+            self.ticks.append(SliderTick(point.x, point.y,
+                                         self.time + time_add * (len(self.ticks) + 1)))
             current_distance += self.tick_distance
 
         # Adds slider_ends / repeat_points
@@ -112,24 +120,28 @@ class HitObject(object):
             time_offset = (self.duration / self.repeat) * repeat_id
 
             if self.slider_type == "L":  # Linear
-                point = mathhelper.point_on_line(self.curve_points[0], self.curve_points[1], dist)
+                point = mathhelper.point_on_line(
+                    self.curve_points[0], self.curve_points[1], dist)
             else:  # Perfect, Bezier & Catmull uses the same function
                 point = curve.point_at_distance(dist)
 
-            self.end_ticks.append(SliderTick(point.x, point.y, self.time + time_offset))
+            self.end_ticks.append(SliderTick(
+                point.x, point.y, self.time + time_offset))
 
             # Adds the ticks that already exists on the slider back (but reversed)
             repeat_ticks = copy.deepcopy(self.ticks)
 
             if 1 & repeat_id:  # We have to reverse the timing normalizer
                 repeat_ticks = list(reversed(repeat_ticks))
-                normalize_time_value = self.time + (self.duration / self.repeat)
+                normalize_time_value = self.time + \
+                    (self.duration / self.repeat)
             else:
                 normalize_time_value = self.time
 
             # Correct timing
             for tick in repeat_ticks:
-                tick.time = self.time + time_offset + abs(tick.time - normalize_time_value)
+                tick.time = self.time + time_offset + \
+                    abs(tick.time - normalize_time_value)
 
             repeat_bonus_ticks += repeat_ticks
 
@@ -140,11 +152,12 @@ class HitObject(object):
         # Add endpoint for slider
         dist_end = (1 & self.repeat) * self.pixel_length
         if self.slider_type == "L":  # Linear
-            point = mathhelper.point_on_line(self.curve_points[0], self.curve_points[1], dist_end)
+            point = mathhelper.point_on_line(
+                self.curve_points[0], self.curve_points[1], dist_end)
         else:  # Perfect, Bezier & Catmull uses the same function
             point = curve.point_at_distance(dist_end)
-
-        self.end_ticks.append(SliderTick(point.x, point.y, self.time + self.duration))
+        self.end_ticks.append(SliderTick(
+            point.x, point.y, self.time + self.duration))
 
     def get_combo(self):
         """

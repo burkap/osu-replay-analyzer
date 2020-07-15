@@ -1,19 +1,36 @@
 import math
 from . import constants
 from . import mathhelper
+import time
 
 
 class Linear(object):  # Because it made sense at the time...
-    def __init__(self, points):
-        self.pos = points
+    def __init__(self, points, pixel_length):
+        if len(points) > 2:
+            raise Exception("Linear slider has more than 2 points?")
+        dist = int(pixel_length//3)
+        points_new = []
+        for i in range(0, dist+1):
+            points_new.append(mathhelper.point_on_line(
+                points[0], points[1], pixel_length*i/dist))
+        self.pos = points_new
+
+
+def x_get_length(pos, length):
+    dist = 0
+    for i in range(1, len(pos)):
+        dist += pos[i].distance(pos[i - 1])
+        if length < dist:
+            return i
 
 
 class Bezier(object):
-    def __init__(self, points):
+    def __init__(self, points, pixel_length):
         self.points = points
         self.order = len(self.points)
         self.pos = []
         self.calc_points()
+        self.pos = self.pos[:x_get_length(self.pos, pixel_length)-1]
 
     def calc_points(self):
         if len(
@@ -51,10 +68,11 @@ class Bezier(object):
             i += step
 
     def point_at_distance(self, length):
-        return {
+        a = {
             0: False,
             1: self.points[0],
         }.get(self.order, self.rec(length))
+        return a
 
     def rec(self, length):
         return mathhelper.point_at_distance(self.pos, length)
@@ -129,15 +147,16 @@ def get_point(p, length):
 
 
 def get_circum_circle(p):
-    d = 2 * (p[0].x * (p[1].y - p[2].y) + p[1].x * (p[2].y - p[0].y) + p[2].x * (p[0].y - p[1].y))
+    d = 2 * (p[0].x * (p[1].y - p[2].y) + p[1].x *
+             (p[2].y - p[0].y) + p[2].x * (p[0].y - p[1].y))
 
     if d == 0:
         raise Exception("Invalid circle! Unable to chose angle.")
 
     ux = ((pow(p[0].x, 2) + pow(p[0].y, 2)) * (p[1].y - p[2].y) + (pow(p[1].x, 2) + pow(p[1].y, 2)) * (
-                p[2].y - p[0].y) + (pow(p[2].x, 2) + pow(p[2].y, 2)) * (p[0].y - p[1].y)) / d
+        p[2].y - p[0].y) + (pow(p[2].x, 2) + pow(p[2].y, 2)) * (p[0].y - p[1].y)) / d
     uy = ((pow(p[0].x, 2) + pow(p[0].y, 2)) * (p[2].x - p[1].x) + (pow(p[1].x, 2) + pow(p[1].y, 2)) * (
-                p[0].x - p[2].x) + (pow(p[2].x, 2) + pow(p[2].y, 2)) * (p[1].x - p[0].x)) / d
+        p[0].x - p[2].x) + (pow(p[2].x, 2) + pow(p[2].y, 2)) * (p[1].x - p[0].x)) / d
 
     px = ux - p[0].x
     py = uy - p[0].y

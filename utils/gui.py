@@ -22,6 +22,7 @@ class GUI:
     keys = None
 
     clock = None
+    sliders = []
     hitcircles = []
     elements = []
 
@@ -163,6 +164,9 @@ class GUI:
         self.screen.fill((20, 20, 20))
         self.play_area.fill((0, 0, 0))
 
+        for i in GUI.sliders:
+            i.display()
+
         for i in GUI.hitcircles:
             i.display()
 
@@ -266,10 +270,10 @@ class Hitobject_Slider(OSU):
     def __init__(self, bmap_slider: HitObject, circle_radius: float,
                  show_control_points=False, color=(255, 0, 0)):
 
-        curve_points = [Vec2(i.x, 384 - i.y if OSU.is_hardrock else i.y) for i in bmap_slider.curve_points]
+        self.bmap_slider = bmap_slider
+        self.path = [Vec2(i.x, 384 - i.y if OSU.is_hardrock else i.y)
+                     for i in bmap_slider.path]
 
-        self.control_points = curve_points
-        self.bezier = Bezier(curve_points)
         self.ticks = []
         for t in bmap_slider.ticks + bmap_slider.end_ticks:
             if OSU.is_hardrock:
@@ -281,11 +285,17 @@ class Hitobject_Slider(OSU):
         self.time = bmap_slider.time
         self.duration = bmap_slider.duration
         self.show_control_points = show_control_points
-        GUI.hitcircles.append(self)
+        GUI.sliders.append(self)
         self.n = 0
 
-    def set_control_points(self, control_points):
-        self.bezier = Bezier(control_points)
+        if bmap_slider.slider_type == 'B':
+            self.color = (0, 255, 255)
+        elif bmap_slider.slider_type == 'L':
+            self.color = (255, 0, 0)
+        elif bmap_slider.slider_type == 'C':
+            self.color = (0, 0, 255)
+        elif bmap_slider.slider_type == 'P':
+            self.color = (255, 0, 255)
 
     def display(self):
         if not (0 - self.duration < (self.time - OSU.current_frame.time) < 450):
@@ -297,62 +307,30 @@ class Hitobject_Slider(OSU):
         # offset between play area and GUI surface
         self.offset_height = (play_area_height - 384) // 2
 
-        for i in [self.bezier.pos[0], self.bezier.pos[len(
-                self.bezier.pos) // 2], self.bezier.pos[-1]]:
-            a = i
-            gfxdraw.aacircle(
+        for i in self.path:
+            gfxdraw.filled_circle(
                 GUI.play_area,
-                int(a.x) + self.offset_width,
-                int(a.y) + self.offset_height,
+                int(i.x) + self.offset_width,
+                int(i.y) + self.offset_height,
                 int(self.circle_radius),
-                (0, 0, 255))
-        l1 = []
-        l2 = []
-        for i in range(1, len(self.bezier.pos), 10):
-            diffx = self.bezier.pos[i].x - self.bezier.pos[i - 1].x
-            diffy = self.bezier.pos[i].y - self.bezier.pos[i - 1].y
-            slope = diffy / diffx
-            b = pow(pow(self.circle_radius, 2) / (pow(slope, 2) + 1), 0.5)
-            a = -slope * b
-            l1.append(
-                (self.bezier.pos[i].x +
-                 a +
-                 self.offset_width,
-                 self.bezier.pos[i].y +
-                 b + self.offset_height))
-            l2.append(
-                (self.bezier.pos[i].x -
-                 a +
-                 self.offset_width,
-                 self.bezier.pos[i].y -
-                 b + self.offset_height))
-
-        pygame.draw.aalines(
-            GUI.play_area,
-            pygame.Color("cyan"),
-            False,
-            l1,
-            3)
+                self.color)
+        for j in range(0, round(self.circle_radius), 4).__reversed__():
+            for i in self.path:
+                gfxdraw.filled_circle(
+                    GUI.play_area,
+                    int(i.x) + self.offset_width,
+                    int(i.y) + self.offset_height,
+                    int(j),
+                    (180-180*j/self.circle_radius, 180-180*j/self.circle_radius, 180-180*j/self.circle_radius))
 
         pygame.draw.aalines(GUI.play_area, pygame.Color("gray"), False, [
-            (i.x + self.offset_width, i.y + self.offset_height) for i in self.bezier.pos], 3)
-
-        pygame.draw.aalines(
-            GUI.play_area,
-            pygame.Color("cyan"),
-            False,
-            l2,
-            3)
+            (i.x + self.offset_width, i.y + self.offset_height) for i in self.path], 3)
 
         for tick in self.ticks:
             gfxdraw.aacircle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
                              pygame.Color("yellow"))
             gfxdraw.filled_circle(GUI.play_area, int(tick.x) + self.offset_width, int(tick.y) + self.offset_height, 12,
                                   pygame.Color("yellow"))
-        if self.show_control_points:
-            for i in self.control_points:
-                pygame.draw.circle(GUI.play_area, (255, 0, 0),
-                                   (i.x, i.y), 5, 1)
 
 
 class CursorTrail(GUI):
