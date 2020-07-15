@@ -189,13 +189,12 @@ class OSU(GUI):
 class Hitcircle(OSU):
     def __init__(self,
                  bmap_hitcircle: HitObject,
-                 is_hardrock: bool,
                  score: int,
                  circle_radius: float = 50,
                  color: tuple = (255, 0, 0)):
 
         self.x = int(bmap_hitcircle.x)
-        self.y = int(384 - bmap_hitcircle.y if is_hardrock else bmap_hitcircle.y)
+        self.y = int(384 - bmap_hitcircle.y if OSU.is_hardrock else bmap_hitcircle.y)
         self.score = score
         self.radius = int(circle_radius)
         self.time = bmap_hitcircle.time
@@ -264,16 +263,16 @@ class Hitcircle(OSU):
 
 
 class Hitobject_Slider(OSU):
-    def __init__(self, bmap_slider: HitObject, circle_radius: float, is_hardrock: bool,
+    def __init__(self, bmap_slider: HitObject, circle_radius: float,
                  show_control_points=False, color=(255, 0, 0)):
 
-        curve_points = [Vec2(i.x, 384 - i.y if is_hardrock else i.y) for i in bmap_slider.curve_points]
+        curve_points = [Vec2(i.x, 384 - i.y if OSU.is_hardrock else i.y) for i in bmap_slider.curve_points]
 
         self.control_points = curve_points
         self.bezier = Bezier(curve_points)
         self.ticks = []
         for t in bmap_slider.ticks + bmap_slider.end_ticks:
-            if is_hardrock:
+            if OSU.is_hardrock:
                 t.y = 384 - t.y
             self.ticks.append(t)
 

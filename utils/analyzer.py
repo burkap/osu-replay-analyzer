@@ -215,9 +215,9 @@ class Analyzer:
         sliders = []
         try:
             for index, h in enumerate(self.beatmap_parser.hitobjects):
-                hc.append(Hitcircle(h, osu.is_hardrock, scores[index][3], self.circle_radius))
+                hc.append(Hitcircle(h, scores[index][3], self.circle_radius))
                 if h.type & 2:
-                    sliders.append(Hitobject_Slider(h, self.circle_radius, osu.is_hardrock))
+                    sliders.append(Hitobject_Slider(h, self.circle_radius))
         except:
             pass  # todo
         cursor = Cursor((0, 0))
