@@ -269,7 +269,7 @@ class Hitcircle(OSU):
 
 class Hitobject_Slider(OSU):
     def __init__(self, bmap_slider: HitObject, circle_radius: float,
-                 show_control_points=False, color=(255, 0, 0)):
+                 show_end_points=False, color=(255, 0, 0)):
 
         self.bmap_slider = bmap_slider
         self.path = [Vec2(i.x, 384 - i.y if OSU.is_hardrock else i.y)
@@ -285,7 +285,7 @@ class Hitobject_Slider(OSU):
         self.color = color
         self.time = bmap_slider.time
         self.duration = bmap_slider.duration
-        self.show_control_points = show_control_points
+        self.show_end_points = show_end_points
         GUI.sliders.append(self)
         self.n = 0
 
@@ -338,6 +338,13 @@ class Hitobject_Slider(OSU):
                              pygame.Color("cyan"))
             gfxdraw.filled_circle(GUI.play_area, int(i.x) + self.offset_width, int(i.y) + self.offset_height, 12,
                                   pygame.Color("cyan"))
+
+        if self.show_end_points:
+            aa = self.bmap_slider.end_ticks[-1]
+            gfxdraw.aacircle(GUI.play_area, int(aa.x) + self.offset_width, int(aa.y) + self.offset_height, 12,
+                                pygame.Color("red"))
+            gfxdraw.filled_circle(GUI.play_area, int(aa.x) + self.offset_width, int(aa.y) + self.offset_height, 12,
+                                    pygame.Color("red"))
 
 
 
