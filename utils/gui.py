@@ -255,8 +255,12 @@ class Hitcircle(OSU):
             self.y + self.offset_height,
             self.radius,
             self.color)
+        gfxdraw.aacircle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
+                              self.radius, (255, 255, 255))
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius, (255, 255, 255))
+        gfxdraw.aacircle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
+                              self.radius - 4, self.color)
         gfxdraw.filled_circle(GUI.play_area, self.x + self.offset_width, self.y + self.offset_height,
                               self.radius - 4, self.color)
         gfxdraw.aacircle(
@@ -309,6 +313,12 @@ class Hitobject_Slider(OSU):
         self.offset_height = (play_area_height - 384) // 2
 
         for i in self.path:
+            gfxdraw.aacircle(
+                GUI.play_area,
+                int(i.x) + self.offset_width,
+                int(i.y) + self.offset_height,
+                int(self.circle_radius),
+                self.color)
             gfxdraw.filled_circle(
                 GUI.play_area,
                 int(i.x) + self.offset_width,
@@ -317,6 +327,12 @@ class Hitobject_Slider(OSU):
                 self.color)
         for j in range(0, round(self.circle_radius), 4).__reversed__():
             for i in self.path:
+                gfxdraw.aacircle(
+                    GUI.play_area,
+                    int(i.x) + self.offset_width,
+                    int(i.y) + self.offset_height,
+                    int(j),
+                    (180-180*j/self.circle_radius, 180-180*j/self.circle_radius, 180-180*j/self.circle_radius))
                 gfxdraw.filled_circle(
                     GUI.play_area,
                     int(i.x) + self.offset_width,
