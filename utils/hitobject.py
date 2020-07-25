@@ -75,6 +75,7 @@ class HitObject(object):
         elif self.slider_type == "C":  # Catmull
             curve = curves.Catmull(self.curve_points)
 
+
         # Quickest to skip this
         # Make path if requested (For drawing visual for testing)
         if calc_path:
@@ -154,8 +155,16 @@ class HitObject(object):
         if self.slider_type == "L":  # Linear
             point = mathhelper.point_on_line(
                 self.curve_points[0], self.curve_points[1], dist_end)
+
+            c_time = 36 if self.duration > 72 else self.duration/2
+            self.calc_tick = mathhelper.point_on_line(
+                self.curve_points[0], self.curve_points[1],  self.pixel_length*(self.duration-c_time)/self.duration)
         else:  # Perfect, Bezier & Catmull uses the same function
             point = curve.point_at_distance(dist_end)
+            c_time = 36 if self.duration > 72 else self.duration/2
+            self.calc_tick = curve.point_at_distance(
+                self.pixel_length*(self.duration-c_time)/self.duration)
+
         self.end_ticks.append(SliderTick(
             point.x, point.y, self.time + self.duration))
 

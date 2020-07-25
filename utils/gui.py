@@ -353,8 +353,17 @@ class Hitobject_Slider(OSU):
 
         if self.show_end_points:
             aa = self.bmap_slider.end_ticks[-1]
+
+            ct = self.bmap_slider.calc_tick
+            gfxdraw.aacircle(GUI.play_area, int(ct.x) + self.offset_width, int(ct.y) + self.offset_height, 14,
+                             pygame.Color("blue"))
+            gfxdraw.filled_circle(GUI.play_area, int(ct.x) + self.offset_width, int(ct.y) + self.offset_height, 14,
+                             pygame.Color("blue"))
+
             gfxdraw.aacircle(GUI.play_area, int(aa.x) + self.offset_width, int(aa.y) + self.offset_height, 12,
-                                pygame.Color("red"))
+                             pygame.Color("red"))
+            gfxdraw.aacircle(GUI.play_area, int(ct.x) + self.offset_width, int(ct.y) + self.offset_height, int(self.circle_radius*2.4),
+                             pygame.Color("cyan"))
             gfxdraw.filled_circle(GUI.play_area, int(aa.x) + self.offset_width, int(aa.y) + self.offset_height, 12,
                                     pygame.Color("red"))
 

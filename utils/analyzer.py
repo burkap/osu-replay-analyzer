@@ -8,6 +8,7 @@ import numpy as np
 from utils.mathhelper import clamp, get_closest_as_index, is_inside_radius, Vec2, ms_to_time
 from pygame.constants import *
 import os
+import collections
 
 
 class Analyzer:
@@ -196,6 +197,111 @@ class Analyzer:
         return scores
         #
         #######
+    def slider_loop(self, tt):
+        end_clicked = False
+        while True:
+            if len(self.current_hitobject.ticks) > 0:
+                for tick in self.current_hitobject.ticks + self.current_hitobject.end_ticks[:-1]:
+                    while True:
+                        if abs(self.current_frame.time-tick.time) <5:
+                            if tt[-1] == "s_start_clicked" or tt[-1] == "s_tick_clicked":
+                                var_radius = self.circle_radius *2.4
+                            else:
+                                var_radius = self.circle_radius
+                            if is_inside_radius((self.current_frame.x, self.current_frame.y), (tick.x, tick.y), var_radius):
+                                if self.current_frame.k1_pressed or self.current_frame.k2_pressed:
+                                    tt.append("s_tick_clicked")
+                                    self.go_to_next_frame()
+                                    break
+                        elif self.current_frame.time < tick.time:
+                            self.go_to_next_frame()
+                        else:
+                            tt.append("s_tick_miss")
+                            break
+            while not end_clicked:
+                tick = self.current_hitobject.end_ticks[-1]
+                tick.time = int(tick.time)
+                c_time = 36 if self.current_hitobject.duration > 72 else self.current_hitobject.duration/2
+
+
+                if abs(self.current_frame.time-tick.time) <= c_time and not end_clicked:
+                    if tt[-1] == "s_start_clicked" or tt[-1] == "s_tick_clicked":
+                        var_radius = self.circle_radius * 2.4
+                    else:
+                        var_radius = self.circle_radius
+                    if is_inside_radius((self.current_frame.x, self.current_frame.y), (self.current_hitobject.calc_tick.x, self.current_hitobject.calc_tick.y), var_radius):
+                        if self.current_frame.k1_pressed or self.current_frame.k2_pressed:
+                            tt.append("s_end_clicked")
+                            end_clicked = True
+                            self.go_to_next_frame()
+                    else:
+                        self.go_to_next_frame()
+                elif self.current_frame.time < tick.time:
+                    self.go_to_next_frame()
+                else:
+                    print(self.current_frame.time)
+                    tt.append("s_end_miss")
+                    end_clicked = True
+
+            break
+        self.go_to_next_hitobject()
+
+    def tokenizer(self):
+        tt = []
+        self.set_current_frame(0)
+        self.set_current_hitobject(0)
+        while True:
+            if len(tt) > 0:
+                #print(next(iter(tt[-1].items()))[1][0])
+                pass
+            if self.current_frame.time > 16000:
+               #input()
+                pass
+            #print(self.current_hitobject.type & 2, self.current_frame.time , self.current_hitobject.time)
+            if self.current_hitobject.type & 1:
+                # Late
+                if self.current_frame.time > self.current_hitobject.time + self.hit_50:
+                    tt.append("hc_miss")
+                    self.go_to_next_frame()
+                    self.go_to_next_hitobject()
+                # Early
+                elif (self.current_hitobject.time-self.current_frame.time) > self.hit_50:
+                    self.go_to_next_frame()
+                # Inside hit windows
+                else:
+                    if is_inside_radius((self.current_frame.x,self.current_frame.y), (self.current_hitobject.x,self.current_hitobject.y), self.circle_radius):
+                        if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
+                                (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
+                            tt.append("hc_clicked")
+                            self.go_to_next_frame()
+                            self.go_to_next_hitobject()
+                self.go_to_next_frame()
+            elif self.current_hitobject.type & 2:
+                # Late
+                if self.current_frame.time > self.current_hitobject.time + self.hit_50:
+                    tt.append("s_start_miss")
+                    #print("s_miss")
+                    self.go_to_next_frame()
+                    self.slider_loop(tt)
+                # Early
+                elif (self.current_hitobject.time-self.current_frame.time) > self.hit_50:
+                    #print("s_early")
+                    self.go_to_next_frame()
+                # Inside hit windows
+                else:
+                    #print("s_in")
+                    if is_inside_radius((self.current_frame.x, self.current_frame.y), (self.current_hitobject.x, self.current_hitobject.y), self.circle_radius):
+                        if ((not self.prev_frame.k1_pressed) and self.current_frame.k1_pressed) or (
+                                (not self.prev_frame.k2_pressed) and self.current_frame.k2_pressed):
+                            tt.append("s_start_clicked")
+                            self.go_to_next_frame()
+                            self.slider_loop(tt)
+                    self.go_to_next_frame()
+
+            if self.current_hitobject_index == self._hitobjects_count-1:
+                break
+
+        return tt
 
     def run(self):
         """
@@ -204,11 +310,12 @@ class Analyzer:
         """
         scores = self.get_scores()
 
+        tt = self.tokenizer()
+        print(collections.Counter(tt))
         # GUI code starts here
         self.set_current_frame(0)
         self.set_current_hitobject(0)
 
-        start_time = time.time()
         play_area_width, play_area_height = (800, 600)
         padding_width, padding_height = (130, 60)
         gui_width, gui_height = (
@@ -307,6 +414,13 @@ class Analyzer:
         gui.pause_music()
         gui.set_music_pos(gui.get_music_pos())
         while True:
+
+            self.set_current_frame(get_closest_as_index(
+                self.play_parser.frame_times, int(gui.get_music_pos())))
+            self.set_current_hitobject(get_closest_as_index(
+                [i.time for i in self.beatmap_parser.hitobjects], int(gui.get_music_pos())))
+           # print("{0} {1:b}".format(self.current_hitobject.time, self.current_hitobject.type))
+
             osu.set_current_frame(self.current_frame)
             time_display.set_text(ms_to_time(self.current_frame.time))
             ms_arr.append(abs(self.current_frame.time - gui.get_music_pos()))
@@ -348,8 +462,14 @@ class Analyzer:
 
             debuglog.add_text(
                 f"")
+            debuglog.add_text(
+                f"Calculated:")
             debuglog.add_text(f"300: {self.count300} 100: {self.count100}")
             debuglog.add_text(f"50: {self.count50} X: {self.countmiss}")
+            debuglog.add_text(
+                f"Actual:")
+            debuglog.add_text(f"300: {self.play_parser.count300} 100: {self.play_parser.count100}")
+            debuglog.add_text(f"50: {self.play_parser.count50} X: {self.play_parser.count_miss}")
             button_pause.set_text("Pause" if self.running else "Play")
 
             gui.draw()
