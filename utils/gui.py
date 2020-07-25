@@ -198,8 +198,7 @@ class Hitcircle(OSU):
                  color: tuple = (255, 0, 0)):
 
         self.x = int(bmap_hitcircle.x)
-        self.y = int(
-            384 - bmap_hitcircle.y if OSU.is_hardrock else bmap_hitcircle.y)
+        self.y = int(bmap_hitcircle.y)
         self.score = score
         self.radius = int(circle_radius)
         self.time = bmap_hitcircle.time
@@ -276,13 +275,10 @@ class Hitobject_Slider(OSU):
                  show_end_points=False, color=(255, 0, 0)):
 
         self.bmap_slider = bmap_slider
-        self.path = [Vec2(i.x, 384 - i.y if OSU.is_hardrock else i.y)
-                     for i in bmap_slider.path]
+        self.path = bmap_slider.path
 
         self.ticks = []
         for t in bmap_slider.ticks:
-            if OSU.is_hardrock:
-                t.y = 384 - t.y
             self.ticks.append(t)
 
         self.circle_radius = circle_radius

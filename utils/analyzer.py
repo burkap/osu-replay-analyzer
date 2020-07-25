@@ -65,12 +65,24 @@ class Analyzer:
         if self.play_parser.mods & 2:  # easy
             od = od / 2
         elif self.play_parser.mods & 16:  # hardrock
+            self.flip_beatmap()
             od = min(od * 1.4, 10)
 
         # hit windows
         self.hit_50 = (400 - (20 * od)) / 2
         self.hit_100 = (280 - (16 * od)) / 2
         self.hit_300 = (160 - (12 * od)) / 2
+
+    def flip_beatmap(self):
+        for h in self.beatmap_parser.hitobjects:
+            h.y = 384-h.y
+            if h.type & 2:
+                h.path = [Vec2(i.x, 384-i.y) for i in h.path]
+                h.calc_tick = Vec2(h.calc_tick.x, 384- h.calc_tick.y)
+                for tick in h.ticks:
+                    tick.y = 384-tick.y
+                for tick in h.end_ticks:
+                    tick.y = 384-tick.y
 
     def switch_running(self):
         self.running = not self.running
@@ -147,9 +159,7 @@ class Analyzer:
         scores = []  # this gets (frame, hitobject, diff, score)
         while True:
             current_pos_frame = (self.current_frame.x, self.current_frame.y)
-            current_pos_hitobject = (self.current_hitobject.x, 384 -
-                                                               self.current_hitobject.y if (
-                    self.play_parser.mods & 16) else self.current_hitobject.y)
+            current_pos_hitobject = (self.current_hitobject.x, self.current_hitobject.y)
             if is_inside_radius(current_pos_frame, current_pos_hitobject, self.circle_radius):
                 diff_ms = self.get_ms_delay(
                     self.current_frame, self.current_hitobject)
