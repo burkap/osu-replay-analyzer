@@ -16,7 +16,6 @@ class Analyzer:
         replay_file     -- replay.file  (.osr)
         beatmap_file    -- beatmap file (.osu)
     """
-
     def __init__(self, replay_file: str, osu_path: str):
         songs_folder = os.path.join(osu_path, "Songs")
         db_file = os.path.join(osu_path, "osu!.db")
@@ -111,6 +110,19 @@ class Analyzer:
         self.prev_frame = self.play_parser.frames[self.current_frame_index - 1]
         self.current_frame = self.play_parser.frames[self.current_frame_index]
 
+    def go_to_prev_frame_ms(self,gui):
+        self.go_to_prev_frame()
+        self.set_current_hitobject(get_closest_as_index(
+            [i.time for i in self.beatmap_parser.hitobjects], self.current_frame.time))
+        gui.set_music_pos(self.current_frame.time)
+
+    def go_to_next_frame_ms(self,gui):
+        self.go_to_next_frame()
+        self.set_current_hitobject(get_closest_as_index(
+            [i.time for i in self.beatmap_parser.hitobjects], self.current_frame.time))
+        gui.set_music_pos(self.current_frame.time)
+
+
     def set_current_frame(self, index):
         self.current_frame_index = index
         try:
@@ -197,6 +209,7 @@ class Analyzer:
         return scores
         #
         #######
+
     def slider_loop(self, tt):
         end_clicked = False
         while True:
@@ -239,14 +252,64 @@ class Analyzer:
                 elif self.current_frame.time < tick.time:
                     self.go_to_next_frame()
                 else:
-                    print(self.current_frame.time)
+                    print(f"END MISS ON: {self.current_frame.time}")
                     tt.append("s_end_miss")
                     end_clicked = True
 
             break
         self.go_to_next_hitobject()
 
+    def tokens_to_score(self, tt):
+        max_combo = 0
+        current_combo = 0
+        for i, t in enumerate(tt):
+            if t == "hc_clicked":
+                current_combo+=1
+            elif t == "hc_miss":
+                if current_combo > max_combo:
+                    max_combo = current_combo
+                current_combo = 0
+            elif t == "s_start_clicked":
+                current_combo += 1
+            elif t == "s_start_miss":
+                if current_combo > max_combo:
+                    max_combo = current_combo
+                current_combo = 0
+            elif t == "s_tick_clicked":
+                current_combo += 1
+            elif t == "s_tick_miss":
+                if current_combo > max_combo:
+                    max_combo = current_combo
+                current_combo = 0
+            elif t == "s_end_clicked":
+                current_combo += 1
+            elif t == "s_end_miss":
+                pass
+
+        if current_combo > max_combo:
+            max_combo = current_combo
+        current_combo = 0
+        return max_combo
+
+
+
+
     def tokenizer(self):
+        """
+        tokens are:
+                hc_clicked
+                hc_miss
+
+                s_start_clicked
+                s_start_miss
+                s_tick_clicked
+                s_tick_miss
+                s_start_clicked
+                s_start_miss
+                s_end_clicked
+                s_end_miss
+
+        """
         tt = []
         self.set_current_frame(0)
         self.set_current_hitobject(0)
@@ -395,8 +458,8 @@ class Analyzer:
         ####
         gui.add_single_press_event([K_SPACE], self.switch_running)
         # to-do V
-        # gui.add_single_press_event([K_RIGHT], self.go_to_next_ms)
-        # gui.add_single_press_event([K_LEFT], self.go_to_prev_ms)
+        gui.add_single_press_event([K_RIGHT], self.go_to_next_frame_ms, gui)
+        gui.add_single_press_event([K_LEFT], self.go_to_prev_frame_ms, gui)
         gui.add_single_press_event([K_x], cursor_trail.toggle_show_markers)
         gui.add_single_press_event([K_m], toggle_mute)
         #
